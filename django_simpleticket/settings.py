@@ -12,31 +12,30 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 
 import os
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-
-
-
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+# Base directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
+# Secret key (Keep this secret in production!)
 SECRET_KEY = 'uf#o3lw&+cq^ob(3uld$-t)$w+2wtyt8jt5er-&g2z4(=9rh_p'
 
-# SECURITY WARNING: don't run with debug turned on in production!
+# Debug mode (Set to False in production)
 DEBUG = True
 
+# Allowed hosts (Configure for production)
 ALLOWED_HOSTS = []
 
+# Authentication
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+LOGIN_REDIRECT_URL = '/tickets/'  # Redirect after login
+LOGOUT_REDIRECT_URL = '/login/'  # Redirect after logout
+LOGIN_URL = '/login/'  # Login page URL
+# AUTH_USER_MODEL = 'simpleticket.CustomUser'
+
+
+# Default email sender
 DEFAULT_FROM_EMAIL = 'webmaster@localhost'
 
-
-# Application definition
-
+# Installed apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -47,23 +46,25 @@ INSTALLED_APPS = [
     'simpleticket',
 ]
 
+# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',  # Add this if missing
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',  # Add this if missing
-    'django.contrib.messages.middleware.MessageMiddleware',  # Add this if missing
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-
+# Root URL configuration
 ROOT_URLCONF = 'django_simpleticket.urls'
 
+# Templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -76,12 +77,10 @@ TEMPLATES = [
     },
 ]
 
+# WSGI application
 WSGI_APPLICATION = 'django_simpleticket.wsgi.application'
 
-
 # Database
-# https://docs.djangoproject.com/en/1.9/ref/settings/#databases
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -89,10 +88,7 @@ DATABASES = {
     }
 }
 
-
 # Password validation
-# https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -108,35 +104,21 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
-# https://docs.djangoproject.com/en/1.9/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_L10N = True
-
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.9/howto/static-files/
+STATIC_URL = '/static/'
 
+# Define static files directories
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-    'simpleticket',
-    '/var/www/static/',
-    'D:/django/django-simpleticket/static',
+    os.path.join(BASE_DIR, 'static'),  # Main static directory
 ]
 
 
-STATIC_URL = '/static/'
-
-TEMPLATE_DIRS = (
-    os.path.join(BASE_DIR,  'templates'),
-    'simpleticket'
-)
+# Directory for collected static files
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Use for collectstatic

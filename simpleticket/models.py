@@ -1,6 +1,7 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.db.models import Sum
+from django.contrib.auth.models import AbstractUser
 
 
 class Project(models.Model):
@@ -23,7 +24,9 @@ class Project(models.Model):
         users = self.active_users()
         timemap = {}
         for user in users:
-            timemap[user] = Ticket.objects.filter(project=self, assigned_to=user).aggregate(Sum('time_logged'))['time_logged__sum']
+            timemap[user] = Ticket.objects.filter(
+                project=self, assigned_to=user
+            ).aggregate(Sum('time_logged'))['time_logged__sum']
         return timemap
 
 
@@ -62,8 +65,12 @@ class Ticket(models.Model):
     creation_time = models.DateTimeField()
     update_time = models.DateTimeField()
 
-    created_by = models.ForeignKey(User, null=True, related_name='tickets_created', on_delete=models.CASCADE)
-    assigned_to = models.ForeignKey(User, null=True, related_name='tickets_assigned', on_delete=models.CASCADE)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, related_name='tickets_created', on_delete=models.CASCADE
+    )
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, related_name='tickets_assigned', on_delete=models.CASCADE
+    )
 
     time_logged = models.FloatField(default=0)
 
@@ -76,7 +83,9 @@ class Ticket(models.Model):
 
 class TicketComment(models.Model):
     ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE)
-    commenter = models.ForeignKey(User, null=True, on_delete=models.CASCADE)
+    commenter = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, on_delete=models.CASCADE
+    )
     text = models.TextField()
 
     update_time = models.DateTimeField()
@@ -84,8 +93,8 @@ class TicketComment(models.Model):
 
     automated = models.BooleanField(default=False)
 
-    def save(self):
+    def save(self, *args, **kwargs):
         self.ticket.update_time = self.update_time
         self.ticket.time_logged += self.time_logged
         self.ticket.save()
-        super(TicketComment, self).save()
+        super(TicketComment, self).save(*args, **kwargs)
