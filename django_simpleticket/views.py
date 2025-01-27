@@ -1,4 +1,9 @@
 from django.shortcuts import render
+from django.contrib.auth import logout
+from django.contrib.auth import logout
+from django.shortcuts import redirect
+from django.contrib import messages
+
 
 def role_based_redirect(request):
     if request.user.is_authenticated:
@@ -23,3 +28,8 @@ def register(request):
     else:
         form = UserCreationForm()
     return render(request, 'register.html', {'form': form})
+
+def logout_view(request):
+    logout(request)  # Logs the user out
+    messages.success(request, "You have been logged out successfully.")
+    return redirect('login')  # Redirect to the login page or any other desired page

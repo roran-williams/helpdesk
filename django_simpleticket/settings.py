@@ -28,6 +28,7 @@ ALLOWED_HOSTS = []
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_REDIRECT_URL = '/tickets/'  # Redirect after login
 LOGOUT_REDIRECT_URL = '/login/'  # Redirect after logout
+
 LOGIN_URL = '/login/'  # Login page URL
 # AUTH_USER_MODEL = 'simpleticket.CustomUser'
 
@@ -44,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'simpleticket',
+    'accounts'
 ]
 
 # Middleware

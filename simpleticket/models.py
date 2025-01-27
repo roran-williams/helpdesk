@@ -1,24 +1,22 @@
 from django.db import models
 from django.conf import settings
 from django.db.models import Sum
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import User
 
 
 class Project(models.Model):
     name = models.CharField(max_length=32)
     is_default = models.BooleanField(default=False)
 
-    def __unicode__(self):
-        return self.name
-
     def __str__(self):
         return self.name
 
     def active_users(self):
-        user_set = set()
-        for ticket in self.ticket_set.all():
-            user_set.add(ticket.assigned_to)
-        return user_set
+        # Filter users who are assigned to tickets with status 'open' or 'in_progress'
+        return User.objects.filter(
+            tickets_assigned__project=self, 
+            tickets_assigned__status__name__in=['open', 'in_progress']
+        ).distinct()
 
     def user_time_map(self):
         users = self.active_users()
@@ -36,20 +34,14 @@ class Priority(models.Model):
     is_default = models.BooleanField(default=False)
     display_color = models.TextField(max_length=16, default="#000000")
 
-    def __unicode__(self):
-        return self.name + " (" + str(self.value) + ")"
-
     def __str__(self):
-        return self.__unicode__()
+        return f"{self.name} ({self.value})"
 
 
 class Status(models.Model):
     name = models.CharField(max_length=32)
     is_default = models.BooleanField(default=False)
     hide_by_default = models.BooleanField(default=False)
-
-    def __unicode__(self):
-        return self.name
 
     def __str__(self):
         return self.name
@@ -60,7 +52,7 @@ class Ticket(models.Model):
     name = models.CharField(max_length=128)
     desc = models.TextField()
     priority = models.ForeignKey(Priority, on_delete=models.CASCADE)
-    status = models.ForeignKey(Status, on_delete=models.CASCADE)
+    status = models.ForeignKey(Status, on_delete=models.CASCADE)  # Use ForeignKey to Status
 
     creation_time = models.DateTimeField()
     update_time = models.DateTimeField()
@@ -74,11 +66,15 @@ class Ticket(models.Model):
 
     time_logged = models.FloatField(default=0)
 
-    def __unicode__(self):
-        return self.name
-
     def __str__(self):
-        return self.name
+        return f"{self.name} (Project: {self.project}, Priority: {self.priority}, Assigned: {self.assigned_to})"
+
+    class Meta:
+        permissions = [
+            ('can_view_status', 'Can view ticket status'),
+            ('can_change_status', 'Can change ticket status'),
+            ('assign_ticket', 'Can assign tickets'),
+        ]
 
 
 class TicketComment(models.Model):
@@ -94,7 +90,19 @@ class TicketComment(models.Model):
     automated = models.BooleanField(default=False)
 
     def save(self, *args, **kwargs):
+        if self.time_logged < 0:
+            raise ValueError("Time logged cannot be negative.")
         self.ticket.update_time = self.update_time
         self.ticket.time_logged += self.time_logged
         self.ticket.save()
         super(TicketComment, self).save(*args, **kwargs)
+
+
+class TimeEntry(models.Model):
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE)
+    time_logged = models.FloatField()
+    logged_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    description = models.TextField()
+
+    def __str__(self):
+        return f"Time logged for {self.ticket.name} by {self.logged_by}"

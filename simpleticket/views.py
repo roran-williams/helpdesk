@@ -9,7 +9,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
-from .forms import RegistrationForm
 
 try:
     from urllib.parse import urlencode
@@ -20,18 +19,25 @@ from simpleticket.utils import email_user
 
 from django.core.exceptions import PermissionDenied
 
-def register(request):
-    if request.method == 'POST':
-        form = RegistrationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Your account has been created! You can now log in.")
-            return redirect('login')  # Redirect to the login page after registration
-        else:
-            messages.error(request, "Please correct the errors below.")
-    else:
-        form = RegistrationForm()
-    return render(request, 'registration/register.html', {'form': form})
+
+from django.core.exceptions import PermissionDenied
+
+def ticket_creator_permission_required(view_func):
+    """
+    This decorator ensures that only the user who created the ticket
+    can perform certain actions on it (like updating or deleting).
+    """
+    def wrapper(request, *args, **kwargs):
+        ticket_id = kwargs.get('ticket_id')
+        ticket = get_object_or_404(Ticket, pk=ticket_id)
+        
+        if ticket.created_by != request.user:
+            raise PermissionDenied("You do not have permission to edit this ticket.")
+        
+        return view_func(request, *args, **kwargs)
+    
+    return wrapper
+
 
 def admin_required(view_func):
     def wrapper(request, *args, **kwargs):
@@ -117,6 +123,11 @@ def view_all(request):
 
     return render(request, 'view_all.html', {'tickets': tickets})
 
+from django.core.exceptions import PermissionDenied
+
+from django.contrib.auth.decorators import login_required, permission_required
+from django.core.exceptions import PermissionDenied
+
 @login_required
 def submit_ticket(request):
     ticket = Ticket()
@@ -126,10 +137,14 @@ def submit_ticket(request):
     ticket.created_by = request.user
 
     # Handle case of unassigned tickets
-    assigned_option = request.POST['assigned']
+    assigned_option = request.POST.get('assigned', 'unassigned')  # Safely get 'assigned', default to 'unassigned'
+    
     if assigned_option == 'unassigned':
         ticket.assigned_to = None
     else:
+        # Check if the user has permission to assign tickets
+        if not request.user.has_perm('simpleticket.assign_ticket'):
+            raise PermissionDenied("You do not have permission to assign tickets.")
         ticket.assigned_to = User.objects.get(pk=int(assigned_option))
 
     ticket.creation_time = datetime.now()
@@ -146,8 +161,10 @@ def submit_ticket(request):
         email_user(ticket.assigned_to, "Ticket Assigned: " + ticket.name, message_preamble + ticket.desc)
 
     messages.success(request, "The ticket has been created.")
-
     return HttpResponseRedirect("/tickets/view/" + str(ticket.id) + "/")
+
+
+
 
 @login_required
 def submit_comment(request, ticket_id):
@@ -156,36 +173,39 @@ def submit_comment(request, ticket_id):
     status = Status.objects.get(pk=int(request.POST["comment-status"]))
     ticket = get_object_or_404(Ticket, pk=ticket_id)
 
-    # Create ticket comment
-    comment = TicketComment()
+    # Check if the user has permission to change the status
+    if not request.user.has_perm('simpleticket.change_status'):
+        # If the status is being changed, deny access
+        if status != ticket.status:
+            raise PermissionDenied("You do not have permission to change the ticket status.")
 
-    # Update status if necessary
+    # Update status if necessary (only if permitted)
     if status != ticket.status:
         if text != "":
             text += "\n\n"
         else:
             comment.automated = True
-        text += "<strong>Automated Comment:</strong> Status changed from " + ticket.status.name + " to " + status.name
+        text += f"<strong>Automated Comment:</strong> Status changed from {ticket.status.name} to {status.name}"
         ticket.status = status
         ticket.save()
 
-    # Set ticket comment properties
-    comment.commenter = request.user
-    comment.text = text
-    comment.ticket = ticket
-    comment.time_logged = time_logged
-    comment.update_time = datetime.now()
+    # Create ticket comment
+    comment = TicketComment(
+        commenter=request.user, 
+        text=text, 
+        ticket=ticket, 
+        time_logged=time_logged, 
+        update_time=datetime.now()
+    )
     comment.save()
 
-    # Email the assigned user if different than commenting user
-    if ticket.assigned_to is not None and (ticket.assigned_to != comment.commenter):
-        message_preamble = 'A ticket you are assigned to has received a comment:\n' + \
-                           request.get_host() + '/tickets/view/' + str(ticket.id) + '/\n\n'
-        email_user(ticket.assigned_to, "Ticket Comment: " + ticket.name, message_preamble + ticket.desc)
+    if ticket.assigned_to and (ticket.assigned_to != comment.commenter):
+        message_preamble = f'A ticket you are assigned to has received a comment:\n{request.get_host()}/tickets/view/{ticket.id}/\n\n'
+        email_user(ticket.assigned_to, f"Ticket Comment: {ticket.name}", message_preamble + ticket.desc)
 
     messages.success(request, "The comment has been added.")
+    return HttpResponseRedirect(f"/tickets/view/{ticket.id}/")
 
-    return HttpResponseRedirect("/tickets/view/" + str(ticket.id) + "/")
 
 @login_required
 def update(request, ticket_id):
@@ -202,73 +222,37 @@ def update(request, ticket_id):
 
 
 @login_required
+@ticket_creator_permission_required
 def update_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
 
-    if ticket.created_by != request.user:
-        raise PermissionDenied("You do not have permission to update this ticket.")
-
-    # Rest of the function remains unchanged...
+    # Check if the user has permission to change the status
+    if not request.user.has_perm('simpleticket.change_status'):
+        # If the status is being changed, deny access
+        status = Status.objects.get(pk=int(request.POST['status']))
+        if status != ticket.status:
+            raise PermissionDenied("You do not have permission to change the ticket status.")
 
     project = Project.objects.get(pk=int(request.POST['project']))
     priority = Priority.objects.get(pk=int(request.POST['priority']))
     status = Status.objects.get(pk=int(request.POST['status']))
 
-    # Handle case of unassigned tickets
     assigned_option = request.POST['assigned']
-    if assigned_option == 'unassigned':
-        assigned_to = None
-    else:
-        assigned_to = User.objects.get(pk=int(assigned_option))
+    assigned_to = None if assigned_option == 'unassigned' else User.objects.get(pk=int(assigned_option))
 
-    name = request.POST['name']
-    desc = request.POST['desc']
-
-    # Generate change auto-comment
-    changes = []
-    if project != ticket.project:
-        changes.append("Changed project from " + ticket.project.name + " to " + project.name)
-    if priority != ticket.priority:
-        changes.append("Changed priority from " + ticket.priority.name + " to " + priority.name)
-    if status != ticket.status:
-        changes.append("Changed status from " + ticket.status.name + " to " + status.name)
-    if assigned_to != ticket.assigned_to:
-        changes.append("Changed assigned to from " + str(ticket.assigned_to) + " to " + str(assigned_to))
-    if name != ticket.name:
-        changes.append("Changed summary from " + ticket.name + " to " + name)
-    if desc != ticket.desc:
-        changes.append("Updated description")
-
-    # Save changes to the ticket
     ticket.project = project
     ticket.priority = priority
-    ticket.status = status
+    ticket.status = status  # Status update is allowed only if permitted
     ticket.assigned_to = assigned_to
-    ticket.name = name
-    ticket.desc = desc
+    ticket.name = request.POST['name']
+    ticket.desc = request.POST['desc']
     ticket.update_time = datetime.now()
     ticket.save()
 
-    # Add the auto-generated comment if necessary
-    if len(changes) > 0:
-        auto = TicketComment()
-        auto.ticket = ticket
-        auto.commenter = request.user
-        auto.time_logged = 0
-        auto.update_time = datetime.now()
-        auto.text = "<strong>Automated Comment:</strong> " + ("; ".join(changes))
-        auto.automated = True
-        auto.save()
-
-    # Email the assigned user if updated
-    if ticket.assigned_to is not None and (ticket.assigned_to != auto.commenter):
-        message_preamble = 'A ticket you are assigned to you has been updated:\n' +\
-                           request.get_host() + '/tickets/view/' + str(ticket.id) + '/\n\n'
-        email_user(ticket.assigned_to, "Ticket Update: " + ticket.name, message_preamble + ticket.desc)
-
     messages.success(request, "The ticket has been updated.")
+    return HttpResponseRedirect(f"/tickets/view/{ticket.id}/")
 
-    return HttpResponseRedirect("/tickets/view/" + str(ticket.id) + "/")
+
 
 @login_required
 def delete_ticket(request, ticket_id):
