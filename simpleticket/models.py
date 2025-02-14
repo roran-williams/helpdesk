@@ -49,7 +49,7 @@ class Status(models.Model):
 
 class Ticket(models.Model):
     project = models.ForeignKey(Project, null=True, on_delete=models.CASCADE)
-    name = models.CharField(max_length=128)
+    name = models.CharField(max_length=28)
     desc = models.TextField()
     priority = models.ForeignKey(Priority, on_delete=models.CASCADE)
     status = models.ForeignKey(Status, on_delete=models.CASCADE)  # Use ForeignKey to Status

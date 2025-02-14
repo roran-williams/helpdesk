@@ -23,6 +23,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('tickets/', include('simpleticket.urls')),
     path('accounts/', include('accounts.urls')),
+    path('user/', include('normalusers.urls')),
     path('', home, name='home'),
     path('login/', auth_views.LoginView.as_view(template_name='login.html'), name='login'),
     path('logout/', logout_view, name='logout'),

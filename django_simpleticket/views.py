@@ -31,5 +31,4 @@ def register(request):
 
 def logout_view(request):
     logout(request)  # Logs the user out
-    messages.success(request, "You have been logged out successfully.")
     return redirect('login')  # Redirect to the login page or any other desired page

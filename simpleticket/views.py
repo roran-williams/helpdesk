@@ -8,7 +8,6 @@ from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.shortcuts import redirect
 
 try:
     from urllib.parse import urlencode
@@ -53,7 +52,7 @@ def create(request):
     status_list = Status.objects.all()
     project_list = Project.objects.all()
     user_list = User.objects.all()
-    print(user_list)
+    # print(user_list)
 
     return render(request, 'create.html', {'tab_users': user_list,
                                               'priority_list': priority_list, 'status_list': status_list,
@@ -64,8 +63,8 @@ def view(request, ticket_id=1):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
 
     # Check if the user is the ticket creator
-    if ticket.created_by != request.user:
-        raise PermissionDenied("You do not have permission to view this ticket.")
+    # if ticket.created_by != request.user:
+    #     raise PermissionDenied("You do not have permission to view this ticket.")
 
     status_list = Status.objects.all()
 
@@ -85,11 +84,9 @@ def view(request, ticket_id=1):
 
 @login_required
 def view_all(request):
-    # Filter tickets by the logged-in user
-    tickets = Ticket.objects.filter(created_by=request.user)
-
-    # Handle GET parameters for additional filtering
+    # Handle GET parameters
     assigned_filter = request.GET.get("assigned_to")
+    created_filter = request.GET.get("created_by")
     priority_filter = request.GET.get("priority")
     status_filter = request.GET.get("status")
     project_filter = request.GET.get("project")
@@ -97,32 +94,130 @@ def view_all(request):
     sort_setting = request.GET.get("sort")
     order_setting = request.GET.get("order")
 
-    if assigned_filter:
-        tickets = tickets.filter(assigned_to=assigned_filter)
+    # Set the default sort and order params
+    if not sort_setting:
+        sort_setting = "id"
+    if not order_setting:
+        order_setting = "dsc"
+
+    # Do filtering for GET parameters
+    args = {}
+    if assigned_filter and assigned_filter != 'unassigned':
+        args['assigned_to'] = assigned_filter
+    if assigned_filter and assigned_filter == 'unassigned':
+        args['assigned_to__exact'] = None
+    if created_filter:
+        args['created_by'] = created_filter
     if priority_filter:
-        tickets = tickets.filter(priority=priority_filter)
+        args['priority'] = priority_filter
     if status_filter:
-        tickets = tickets.filter(status=status_filter)
+        args['status'] = status_filter
     if project_filter:
-        tickets = tickets.filter(project=project_filter)
+        args['project'] = project_filter
+    tickets = Ticket.objects.filter(**args)
+
+    # Filter out closed tickets
     if not closed_filter or closed_filter.lower() != "true":
         tickets = tickets.exclude(status__hide_by_default=True)
 
-    # Sort tickets
-    sort_filter = sort_setting or 'id'
-    order = '-' if order_setting == 'dsc' else ''
-    tickets = tickets.order_by(order + sort_filter)
+    # Sort the tickets
+    sort_filter = sort_setting
+    if sort_filter == 'assigned':
+        sort_filter = 'assigned_to'
+    if sort_filter == 'updated':
+        sort_filter = 'update_time'
+    if order_setting == 'dsc':
+        sort_filter = '-' + sort_filter
+    tickets = tickets.order_by(sort_filter)
 
-    # Pagination
+    # Create filter string
+    try:
+        filterArray = []
+        if assigned_filter and assigned_filter != 'unassigned':
+            assigned = User.objects.get(pk=assigned_filter)
+            filterArray.append("Assigned to: " + assigned.username)
+        if assigned_filter and assigned_filter == 'unassigned':
+            filterArray.append("Assigned to: Unassigned")
+        if created_filter:
+            created = User.objects.get(pk=created_filter)
+            filterArray.append("Assigned to: " + created.username)
+        if priority_filter:
+            priority = Priority.objects.get(pk=priority_filter)
+            filterArray.append("Priority: " + priority.name)
+        if status_filter:
+            status = Status.objects.get(pk=status_filter)
+            filterArray.append("Status: " + status.name)
+        if project_filter:
+            project = Project.objects.get(pk=project_filter)
+            filterArray.append("Project: " + project.name)
+        if filterArray:
+            filter = ', '.join(filterArray)
+        else:
+            filter = "All"
+        filter_message = None
+    except Exception as e:
+        filter = "Filter Error"
+        filter_message = e
+
+    # Handle the case of no visible tickets
+    if tickets.count() < 1:
+        filter_message = "No tickets meet the current filtering critera."
+
+    # Generate the base URL for showing closed tickets & sorting
+    get_dict = request.GET.copy()
+    if get_dict.get('show_closed'):
+        del get_dict['show_closed']
+    if get_dict.get('sort'):
+        del get_dict['sort']
+    if get_dict.get('order'):
+        del get_dict['order']
+    base_url = request.path_info + "?" + urlencode(get_dict)
+
+    if closed_filter == 'true':
+        show_closed = 'true'
+    else:
+        show_closed = 'false'
+
+    # Paginate
     paginator = Paginator(tickets, 20)
-    page = request.GET.get('page', 1)
+    try: # Make sure page request is an int. If not, deliver first page.
+        page = int(request.GET.get('page', '1'))
+    except ValueError:
+        page = 1
     try:
         tickets = paginator.page(page)
     except (EmptyPage, InvalidPage):
         tickets = paginator.page(paginator.num_pages)
 
-    return render(request, 'view_all.html', {'tickets': tickets})
+    # Generate next page link
+    pairs = []
+    for key in request.GET.keys():
+        if key != 'page':
+            pairs.append(key + "=" + request.GET.get(key))
+    if tickets.has_next():
+        pairs.append('page=' + str(tickets.next_page_number()))
+    else:
+        pairs.append('page=0')
+    get_params = '&'.join(pairs)
+    next_link = request.path + '?' + get_params
 
+    # Generate previous page link
+    pairs = []
+    for key in request.GET.keys():
+        if key != 'page':
+            pairs.append(key + "=" + request.GET.get(key))
+    if tickets.has_previous():
+        pairs.append('page=' + str(tickets.previous_page_number()))
+    else:
+        pairs.append('page=0')
+    get_params = '&'.join(pairs)
+    prev_link = request.path + '?' + get_params
+
+    return render(request, 'view_all.html', {'tickets': tickets, 'filter': filter,
+                                                          'filter_message': filter_message, 'base_url': base_url,
+                                                          'next_link': next_link, 'prev_link': prev_link,
+                                                          'sort': sort_setting, 'order': order_setting,
+                                                          'show_closed': show_closed})
 from django.core.exceptions import PermissionDenied
 
 from django.contrib.auth.decorators import login_required, permission_required
