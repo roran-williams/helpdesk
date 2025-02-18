@@ -66,7 +66,7 @@ class Ticket(models.Model):
 
     time_logged = models.FloatField(default=0)
 
-    def __str__(self):
+    def __star__(self):
         return f"{self.name} (Project: {self.project}, Priority: {self.priority}, Assigned: {self.assigned_to})"
 
     class Meta:

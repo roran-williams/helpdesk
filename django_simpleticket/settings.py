@@ -26,7 +26,7 @@ ALLOWED_HOSTS = []
 
 # Authentication
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-LOGIN_REDIRECT_URL = '/tickets/'  # Redirect after login
+LOGIN_REDIRECT_URL = '/'  # Redirect after login
 LOGOUT_REDIRECT_URL = '/login/'  # Redirect after logout
 
 LOGIN_URL = '/login/'  # Login page URL

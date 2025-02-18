@@ -30,9 +30,11 @@
 {% endblock %}
 
 {% block content %}
+<p style="background-color: #000000; width: fit-content; color: rgb(46, 235, 46); font-size: 1em; border-radius: 10px; padding: 5px;">{{user}}</p>
     <div id="create-ticket-div">
         <button id="project-view-button" class="btn ticket-button">Project View</button>
         <button id="view-all-button" class="btn ticket-button">All Tickets</button>
+        <button id="logout" class="btn ticket-button">Logout</button>
         <button id="create-ticket-button" class="btn btn-success ticket-button">Create New Ticket</button>
         <script type="text/javascript">
             $("#create-ticket-button").click(function() {
@@ -41,12 +43,15 @@
             $("#view-all-button").click(function() {
                 window.location.href = "/user/";
             });
+            $("#logout").click(function() {
+                window.location.href = "/logout/";
+            });
             $("#project-view-button").click(function() {
                 window.location.href = "/user/project/";
             });
         </script>
     </div>
-    <form action="/tickets/update_ticket/{{ ticket.id }}/" method="POST">
+    <form action="/user/update_ticket/{{ ticket.id }}/" method="POST">
         {% csrf_token %}
         <div class="row">
             <div class="col-md-3">
@@ -88,10 +93,10 @@
             </div>
             <div class="col-md-6" style="text-align: right;">
                 <br/>
-                [ <a href="/tickets/">View All Tickets</a> ]<br/>
-                [ <a href="/tickets/?user={{ user.id }}">View My Tickets</a> ]<br/>
+                [ <a href="/user/">View All Tickets</a> ]<br/>
+                [ <a href="/user/?user={{ user.id }}">View My Tickets</a> ]<br/>
                 <br/>
-                [ <a href="/tickets/view/{{ ticket.id }}/">View Ticket</a> ]
+                [ <a href="/user/view/{{ ticket.id }}/">View Ticket</a> ]
             </div>
         </div>
 

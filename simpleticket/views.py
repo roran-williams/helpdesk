@@ -8,34 +8,15 @@ from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from simpleticket.utils import email_user
+from django.core.exceptions import PermissionDenied
+from django.core.exceptions import PermissionDenied
+from django.contrib.auth.decorators import login_required
 
 try:
     from urllib.parse import urlencode
 except ImportError:
     from urllib import urlencode
-
-from simpleticket.utils import email_user
-
-from django.core.exceptions import PermissionDenied
-
-
-from django.core.exceptions import PermissionDenied
-
-def ticket_creator_permission_required(view_func):
-    """
-    This decorator ensures that only the user who created the ticket
-    can perform certain actions on it (like updating or deleting).
-    """
-    def wrapper(request, *args, **kwargs):
-        ticket_id = kwargs.get('ticket_id')
-        ticket = get_object_or_404(Ticket, pk=ticket_id)
-        
-        if ticket.created_by != request.user:
-            raise PermissionDenied("You do not have permission to edit this ticket.")
-        
-        return view_func(request, *args, **kwargs)
-    
-    return wrapper
 
 
 def admin_required(view_func):
@@ -47,6 +28,7 @@ def admin_required(view_func):
 
 
 @login_required
+@admin_required
 def create(request):
     priority_list = Priority.objects.all()
     status_list = Status.objects.all()
@@ -59,13 +41,9 @@ def create(request):
                                               'project_list': project_list})
 
 @login_required
+@admin_required
 def view(request, ticket_id=1):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
-
-    # Check if the user is the ticket creator
-    # if ticket.created_by != request.user:
-    #     raise PermissionDenied("You do not have permission to view this ticket.")
-
     status_list = Status.objects.all()
 
     # Paginate Ticket_Comments
@@ -83,7 +61,10 @@ def view(request, ticket_id=1):
     return render(request, 'view.html', {'ticket': ticket, 'status_list': status_list, 'ticket_comments': ticket_comments})
 
 @login_required
+@admin_required
 def view_all(request):
+    my_tickets = Ticket.objects.filter(created_by=request.user)
+
     # Handle GET parameters
     assigned_filter = request.GET.get("assigned_to")
     created_filter = request.GET.get("created_by")
@@ -213,17 +194,157 @@ def view_all(request):
     get_params = '&'.join(pairs)
     prev_link = request.path + '?' + get_params
 
-    return render(request, 'view_all.html', {'tickets': tickets, 'filter': filter,
+    return render(request, 'view_all.html', {'tickets': tickets,'my_tickets':my_tickets, 'filter': filter,
                                                           'filter_message': filter_message, 'base_url': base_url,
                                                           'next_link': next_link, 'prev_link': prev_link,
                                                           'sort': sort_setting, 'order': order_setting,
                                                           'show_closed': show_closed})
-from django.core.exceptions import PermissionDenied
 
-from django.contrib.auth.decorators import login_required, permission_required
-from django.core.exceptions import PermissionDenied
 
 @login_required
+def view_my_tickets(request):
+    user_tickets = Ticket.objects.filter(created_by=request.user)
+    # print(tickets)
+    # Handle GET parameters
+    assigned_filter = request.GET.get("assigned_to")
+    created_filter = request.GET.get("created_by")
+    priority_filter = request.GET.get("priority")
+    status_filter = request.GET.get("status")
+    project_filter = request.GET.get("project")
+    closed_filter = request.GET.get("show_closed")
+    sort_setting = request.GET.get("sort")
+    order_setting = request.GET.get("order")
+
+    # Set the default sort and order params
+    if not sort_setting:
+        sort_setting = "id"
+    if not order_setting:
+        order_setting = "dsc"
+
+    # Do filtering for GET parameters
+    args = {}
+    if assigned_filter and assigned_filter != 'unassigned':
+        args['assigned_to'] = assigned_filter
+    if assigned_filter and assigned_filter == 'unassigned':
+        args['assigned_to__exact'] = None
+    if created_filter:
+        args['created_by'] = created_filter
+    if priority_filter:
+        args['priority'] = priority_filter
+    if status_filter:
+        args['status'] = status_filter
+    if project_filter:
+        args['project'] = project_filter
+    tickets = user_tickets.filter(**args)
+    
+
+    # Filter out closed tickets
+    if not closed_filter or closed_filter.lower() != "true":
+        tickets = tickets.exclude(status__hide_by_default=True)
+
+    # Sort the tickets
+    sort_filter = sort_setting
+    if sort_filter == 'assigned':
+        sort_filter = 'assigned_to'
+    if sort_filter == 'updated':
+        sort_filter = 'update_time'
+    if order_setting == 'dsc':
+        sort_filter = '-' + sort_filter
+    tickets = tickets.order_by(sort_filter)
+
+    # Create filter string
+    try:
+        filterArray = []
+        if assigned_filter and assigned_filter != 'unassigned':
+            assigned = User.objects.get(pk=assigned_filter)
+            filterArray.append("Assigned to: " + assigned.username)
+        if assigned_filter and assigned_filter == 'unassigned':
+            filterArray.append("Assigned to: Unassigned")
+        if created_filter:
+            created = User.objects.get(pk=created_filter)
+            filterArray.append("Assigned to: " + created.username)
+        if priority_filter:
+            priority = Priority.objects.get(pk=priority_filter)
+            filterArray.append("Priority: " + priority.name)
+        if status_filter:
+            status = Status.objects.get(pk=status_filter)
+            filterArray.append("Status: " + status.name)
+        if project_filter:
+            project = Project.objects.get(pk=project_filter)
+            filterArray.append("Project: " + project.name)
+        if filterArray:
+            filter = ', '.join(filterArray)
+        else:
+            filter = "All"
+        filter_message = None
+    except Exception as e:
+        filter = "Filter Error"
+        filter_message = e
+
+    # Handle the case of no visible tickets
+    if tickets.count() < 1:
+        filter_message = "No tickets meet the current filtering critera."
+
+    # Generate the base URL for showing closed tickets & sorting
+    get_dict = request.GET.copy()
+    if get_dict.get('show_closed'):
+        del get_dict['show_closed']
+    if get_dict.get('sort'):
+        del get_dict['sort']
+    if get_dict.get('order'):
+        del get_dict['order']
+    base_url = request.path_info + "?" + urlencode(get_dict)
+
+    if closed_filter == 'true':
+        show_closed = 'true'
+    else:
+        show_closed = 'false'
+
+    # Paginate
+    paginator = Paginator(tickets, 20)
+    try: # Make sure page request is an int. If not, deliver first page.
+        page = int(request.GET.get('page', '1'))
+    except ValueError:
+        page = 1
+    try:
+        tickets = paginator.page(page)
+    except (EmptyPage, InvalidPage):
+        tickets = paginator.page(paginator.num_pages)
+
+    # Generate next page link
+    pairs = []
+    for key in request.GET.keys():
+        if key != 'page':
+            pairs.append(key + "=" + request.GET.get(key))
+    if tickets.has_next():
+        pairs.append('page=' + str(tickets.next_page_number()))
+    else:
+        pairs.append('page=0')
+    get_params = '&'.join(pairs)
+    next_link = request.path + '?' + get_params
+
+    # Generate previous page link
+    pairs = []
+    for key in request.GET.keys():
+        if key != 'page':
+            pairs.append(key + "=" + request.GET.get(key))
+    if tickets.has_previous():
+        pairs.append('page=' + str(tickets.previous_page_number()))
+    else:
+        pairs.append('page=0')
+    get_params = '&'.join(pairs)
+    prev_link = request.path + '?' + get_params
+
+    
+
+    return render(request, 'my-tickets.html', { 'tickets': tickets, 'filter': filter,
+                                                          'filter_message': filter_message, 'base_url': base_url,
+                                                          'next_link': next_link, 'prev_link': prev_link,
+                                                          'sort': sort_setting, 'order': order_setting,
+                                                          'show_closed': show_closed})
+
+@login_required
+@admin_required
 def submit_ticket(request):
     ticket = Ticket()
     ticket.project = Project.objects.get(pk=int(request.POST['project']))
@@ -238,7 +359,7 @@ def submit_ticket(request):
         ticket.assigned_to = None
     else:
         # Check if the user has permission to assign tickets
-        if not request.user.has_perm('simpleticket.assign_ticket'):
+        if not request.user.has_perm('simpleitcket.assign_ticket'):
             raise PermissionDenied("You do not have permission to assign tickets.")
         ticket.assigned_to = User.objects.get(pk=int(assigned_option))
 
@@ -262,6 +383,7 @@ def submit_ticket(request):
 
 
 @login_required
+@admin_required
 def submit_comment(request, ticket_id):
     text = request.POST["comment-text"]
     time_logged = float(request.POST["comment-time-logged"])
@@ -292,6 +414,7 @@ def submit_comment(request, ticket_id):
         time_logged=time_logged, 
         update_time=datetime.now()
     )
+    
     comment.save()
 
     if ticket.assigned_to and (ticket.assigned_to != comment.commenter):
@@ -303,6 +426,7 @@ def submit_comment(request, ticket_id):
 
 
 @login_required
+@admin_required
 def update(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
 
@@ -317,7 +441,7 @@ def update(request, ticket_id):
 
 
 @login_required
-@ticket_creator_permission_required
+@admin_required
 def update_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
 
@@ -331,6 +455,9 @@ def update_ticket(request, ticket_id):
     project = Project.objects.get(pk=int(request.POST['project']))
     priority = Priority.objects.get(pk=int(request.POST['priority']))
     status = Status.objects.get(pk=int(request.POST['status']))
+
+    if not request.user.has_perm('assign_ticket'):
+        raise PermissionDenied("You do not have permission to assign tickets.")
 
     assigned_option = request.POST['assigned']
     assigned_to = None if assigned_option == 'unassigned' else User.objects.get(pk=int(assigned_option))
@@ -350,10 +477,11 @@ def update_ticket(request, ticket_id):
 
 
 @login_required
+@admin_required
 def delete_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
 
-    if ticket.created_by != request.user:
+    if not request.user.has_perm('simpleticket.delete_ticket'):
         raise PermissionDenied("You do not have permission to delete this ticket.")
 
     TicketComment.objects.filter(ticket=ticket).delete()
@@ -364,17 +492,17 @@ def delete_ticket(request, ticket_id):
 
 
 @login_required
+@admin_required
 def delete_comment(request, comment_id):
     # Get the ticket
     comment = get_object_or_404(TicketComment, pk=comment_id)
-
     # Delete the ticket
     comment.delete()
-
     messages.success(request, "The comment has been deleted.")
     return HttpResponseRedirect("/tickets/view/" + str(comment.ticket.id) + "/")
 
 @login_required
+@admin_required
 def project(request):
     project_list = Project.objects.all()
 

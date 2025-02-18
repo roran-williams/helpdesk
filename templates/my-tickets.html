@@ -56,22 +56,18 @@
     {% endif %}
     <div id="create-ticket-div">
         <button id="project-view-button" class="btn ticket-button">Project View</button>
-        <button id="my-tickets" class="btn ticket-button">My Tickets</button>
-        <button id="view-all-button" class="btn ticket-button" {% if filter == 'All' %}disabled="disabled"{% endif %}>All Tickets</button>
-        <button id="logout" class="btn ticket-button">Logout</button>
+        <button id="view-all-button" class="btn ticket-button" >All Tickets</button>
+        <button id="logout" class="btn ticket-button" >Logout</button>
         <button id="create-ticket-button" class="btn btn-success ticket-button">Create New Ticket</button>
         <script type="text/javascript">
             $("#create-ticket-button").click(function() {
                 window.location.href = "/tickets/new/";
             });
-            $("#my-tickets").click(function() {
-                window.location.href = "/tickets/my-tickets/";
+            $("#logout").click(function() {
+                window.location.href = "/logout/";
             });
             $("#view-all-button").click(function() {
                 window.location.href = "/tickets/";
-            });
-            $("#logout").click(function() {
-                window.location.href = "/logout/";
             });
             $("#project-view-button").click(function() {
                 window.location.href = "/tickets/project/";
@@ -157,7 +153,6 @@
     {% else %}
         <br/><br/>
     {% endif %}
-    <div class="show-closed">[ <a href="/tickets/my-tickets/">My Tickets Only</a> ]</div>
 
     {% if show_closed == 'true' %}
         <div class="show-closed">[ <a href="{{ base_url }}&show_closed=false&sort={{ sort }}&order={{ order }}">Hide Closed Tickets</a> ]</div>

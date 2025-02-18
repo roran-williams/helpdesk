@@ -46,15 +46,26 @@ def admin_required(view_func):
     return wrapper
 
 
+def profile(request):
+    user = request.user
+    return render(request, 'u/profile.html',{'user':user})
+
 @login_required
 def create(request):
     priority_list = Priority.objects.all()
     status_list = Status.objects.all()
     project_list = Project.objects.all()
     user_list = User.objects.all()
-    # print(user_list)
+    
+    x=0
+    for status in status_list:
+        x+=1
+        if status.name == "submited":
+            pos = x
+            
 
-    return render(request, 'u/create.html', {'tab_users': user_list,
+
+    return render(request, 'u/create.html', {'tab_users': user_list,"pos":pos,
                                               'priority_list': priority_list, 'status_list': status_list,
                                               'project_list': project_list})
 
@@ -81,7 +92,7 @@ def view(request, ticket_id=1):
     except (EmptyPage, InvalidPage):
         ticket_comments = paginator.page(paginator.num_pages)
 
-    return render(request, 'u/view.html', {'ticket': ticket, 'status_list': status_list, 'ticket_comments': ticket_comments})
+    return render(request, 'u/view.html', {'user':request.user, 'ticket': ticket, 'status_list': status_list, 'ticket_comments': ticket_comments})
 
 @login_required
 def view_all(request):
@@ -217,7 +228,9 @@ def view_all(request):
     get_params = '&'.join(pairs)
     prev_link = request.path + '?' + get_params
 
-    return render(request, 'u/view_all.html', {'tickets': tickets, 'filter': filter,
+    
+
+    return render(request, 'u/view_all.html', { 'tickets': tickets, 'filter': filter,
                                                           'filter_message': filter_message, 'base_url': base_url,
                                                           'next_link': next_link, 'prev_link': prev_link,
                                                           'sort': sort_setting, 'order': order_setting,
@@ -229,11 +242,14 @@ from django.core.exceptions import PermissionDenied
 
 @login_required
 def submit_ticket(request):
+    
     ticket = Ticket()
     ticket.project = Project.objects.get(pk=int(request.POST['project']))
     ticket.priority = Priority.objects.get(pk=int(request.POST['priority']))
-    ticket.status = Status.objects.get(pk=int(request.POST['status']))
     ticket.created_by = request.user
+    ticket.status = Status.objects.get(pk=int(request.POST['status']))
+    
+
 
     # Handle case of unassigned tickets
     assigned_option = request.POST.get('assigned', 'unassigned')  # Safely get 'assigned', default to 'unassigned'
@@ -266,7 +282,6 @@ def submit_ticket(request):
 
 
 @login_required
-@ticket_creator_permission_required
 def submit_comment(request, ticket_id):
     text = request.POST["comment-text"]
     time_logged = float(request.POST["comment-time-logged"])
@@ -308,7 +323,6 @@ def submit_comment(request, ticket_id):
 
 
 @login_required
-@ticket_creator_permission_required
 def update(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
 
@@ -355,6 +369,7 @@ def update_ticket(request, ticket_id):
 
 
 @login_required
+@ticket_creator_permission_required
 def delete_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
     if ticket.created_by != request.user:
@@ -366,6 +381,7 @@ def delete_ticket(request, ticket_id):
 
  
 @login_required
+@ticket_creator_permission_required
 def delete_comment(request, comment_id):
     # Get the ticket
     comment = get_object_or_404(TicketComment, pk=comment_id)

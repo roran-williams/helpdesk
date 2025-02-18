@@ -14,7 +14,9 @@ def role_based_redirect(request):
 
 
 def home(request):
-    return render(request, "home.html")
+    if request.user.is_staff:
+        return render(request, "home.html")
+    return render(request, "u/home.html")
 
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
