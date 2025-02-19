@@ -1,13 +1,12 @@
-from django.conf.global_settings import DEFAULT_FROM_EMAIL
-from django.contrib.auth.models import User
 from django.core.mail import send_mail
+from django.conf import settings
 
-__author__ = 'Thorin Tabor'
-
-
-def email_user(user, subject, message, sent_by=DEFAULT_FROM_EMAIL):
-    if isinstance(user, User):
-        to_email = user.email
-    else:
-        to_email = user
-    send_mail(subject, message, sent_by, [to_email])
+def email_user(to_email, subject, message):
+    """Sends an email notification to a user."""
+    send_mail(
+        subject,
+        message,
+        settings.DEFAULT_FROM_EMAIL,
+        [to_email],
+        fail_silently=False,
+    )

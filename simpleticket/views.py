@@ -12,7 +12,6 @@ from simpleticket.utils import email_user
 from django.core.exceptions import PermissionDenied
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
-
 try:
     from urllib.parse import urlencode
 except ImportError:
@@ -33,8 +32,12 @@ def create(request):
     priority_list = Priority.objects.all()
     status_list = Status.objects.all()
     project_list = Project.objects.all()
-    user_list = User.objects.all()
-    # print(user_list)
+    
+    user_list = []
+    u = User.objects.all()
+    for member in u:
+        if member.is_staff:
+            user_list.append(member)
 
     return render(request, 'create.html', {'tab_users': user_list,
                                               'priority_list': priority_list, 'status_list': status_list,
@@ -205,7 +208,7 @@ def view_all(request):
 def view_my_tickets(request):
     user_tickets = Ticket.objects.filter(created_by=request.user)
     # print(tickets)
-    # Handle GET parameters
+    # Handle GET parameters 
     assigned_filter = request.GET.get("assigned_to")
     created_filter = request.GET.get("created_by")
     priority_filter = request.GET.get("priority")
@@ -369,12 +372,13 @@ def submit_ticket(request):
     ticket.desc = request.POST['desc']
     ticket.time_logged = 0
     ticket.save()
-
-    # Email the assigned user if different than creating user
-    if ticket.assigned_to is not None and (ticket.assigned_to != ticket.created_by):
-        message_preamble = 'You have been assigned a ticket:\n' + \
-                           request.get_host() + '/tickets/view/' + str(ticket.id) + '/\n\n'
-        email_user(ticket.assigned_to, "Ticket Assigned: " + ticket.name, message_preamble + ticket.desc)
+    try:
+        email_user(to_email=request.user.email,subject="Helpdesk Ticket Created",message=f"Your ticket '{ticket.name}' has been received.")
+        messages.success(request, "You will receive a confirmation email from help desk.")
+        if ticket.assigned_to != None:
+            email_user(to_email=ticket.assigned_to.email,subject="You Have Been Assigned A ticket",message=f"ticket '{ticket.name}' has been assigned to you.")
+    except Exception:
+        messages.error(request, "could not send email at the moment check your internet connection.")
 
     messages.success(request, "The ticket has been created.")
     return HttpResponseRedirect("/tickets/view/" + str(ticket.id) + "/")
@@ -418,8 +422,10 @@ def submit_comment(request, ticket_id):
     comment.save()
 
     if ticket.assigned_to and (ticket.assigned_to != comment.commenter):
-        message_preamble = f'A ticket you are assigned to has received a comment:\n{request.get_host()}/tickets/view/{ticket.id}/\n\n'
-        email_user(ticket.assigned_to, f"Ticket Comment: {ticket.name}", message_preamble + ticket.desc)
+        try:
+            email_user(to_email=ticket.assigned_to.email,subject="A ticket you are assigned to has received a comment",message=f"ticket '{ticket.name}' has received a comment, check it!!.")
+        except Exception:
+            messages.error(request, "email not sent, but coment is still saved.")
 
     messages.success(request, "The comment has been added.")
     return HttpResponseRedirect(f"/tickets/view/{ticket.id}/")
@@ -444,6 +450,7 @@ def update(request, ticket_id):
 @admin_required
 def update_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
+    previously_assigned = ticket.assigned_to
 
     # Check if the user has permission to change the status
     if not request.user.has_perm('simpleticket.change_status'):
@@ -471,6 +478,20 @@ def update_ticket(request, ticket_id):
     ticket.update_time = datetime.now()
     ticket.save()
 
+    if ticket.assigned_to != previously_assigned:
+        try:
+            email_user(to_email=previously_assigned.email,subject="You are no longer assigened to this ticket",message=f"ticket '{ticket.name}' has been updated,you have been unassigned by '{request.user}' check it!!.")
+        except Exception:
+            messages.success(request, "asignee changed")
+
+    try:
+        if ticket.created_by != request.user:
+            email_user(to_email=ticket.created_by.email,subject="Your ticket has been updated",message=f"ticket '{ticket.name}' has been updated, check it!!.")
+        if ticket.assigned_to != request.user:
+            email_user(to_email=ticket.assigned_to.email,subject="A ticket assigned to you has been updated",message=f"ticket '{ticket.name}' has been updated, check it!!.")
+    except Exception:
+            messages.error(request, "email not send email to the ticket owner or assinee.")    
+
     messages.success(request, "The ticket has been updated.")
     return HttpResponseRedirect(f"/tickets/view/{ticket.id}/")
 
@@ -488,8 +509,16 @@ def delete_ticket(request, ticket_id):
     ticket.delete()
 
     messages.success(request, "The ticket has been deleted.")
+    
+    try:
+        if request.user != ticket.created_by:
+            email_user(to_email=ticket.created_by.email,subject="your ticket has been deleted",message=f"ticket '{ticket.name}' has been deleted!.")
+        if request.user != ticket.assigned_to:
+            email_user(to_email=ticket.assigned_to.email,subject="A ticket you are assigned to has been deleted",message=f"ticket '{ticket.name}' has been deleted!.")
+        email_user(to_email=request.user.email,subject="You have deleted a ticket",message=f"ticket '{ticket.name}' has been deleted!.")
+    except Exception:
+        messages.error(request, "email not sent.")
     return HttpResponseRedirect("/tickets/")
-
 
 @login_required
 @admin_required
@@ -499,6 +528,11 @@ def delete_comment(request, comment_id):
     # Delete the ticket
     comment.delete()
     messages.success(request, "The comment has been deleted.")
+
+    try:
+        email_user(to_email=comment.commenter.email,subject="coment has been delete",message=f"comment '{comment.ticket.name}' has been deleted!.")
+    except Exception:
+        messages.error(request, "email not sent but comment deleted.")
     return HttpResponseRedirect("/tickets/view/" + str(comment.ticket.id) + "/")
 
 @login_required

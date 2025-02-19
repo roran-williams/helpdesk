@@ -60,7 +60,7 @@ def create(request):
     x=0
     for status in status_list:
         x+=1
-        if status.name == "submited":
+        if status.name == "submitted":
             pos = x
             
 

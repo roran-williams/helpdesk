@@ -123,7 +123,7 @@
             <tbody>
                 {% for ticket in tickets.object_list %}
                     <tr class="{% cycle 'odd' 'even' %}">
-                        <td>{{ ticket.id }}</td>
+                        <td><a href="/tickets/view/{{ ticket.id }}/">{{ ticket.id }}</a></td>
                         <td><a href="/tickets/view/{{ ticket.id }}/">{{ ticket.name }}</a></td>
                         <td><a href="/tickets/?project={{ ticket.project.id }}">{{ ticket.project.name }}</a></td>
                         <td><a href="/tickets/?priority={{ ticket.priority.id }}" style="color: {{ ticket.priority.display_color }};">{{ ticket.priority.name }}</a></td>

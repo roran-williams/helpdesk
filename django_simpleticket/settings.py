@@ -22,7 +22,18 @@ SECRET_KEY = 'uf#o3lw&+cq^ob(3uld$-t)$w+2wtyt8jt5er-&g2z4(=9rh_p'
 DEBUG = True
 
 # Allowed hosts (Configure for production)
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['10.11.2.203','127.0.0.1']
+
+
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"  # Change if using another provider
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "h3lpd3zk@gmail.com"  # Replace with your email
+EMAIL_HOST_PASSWORD = "rowlpwwchvayncob"  # Use an App Password for security
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
 
 # Authentication
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
