@@ -36,18 +36,18 @@
         <button id="create-ticket-button" class="btn btn-success ticket-button" disabled="disabled">Create New Ticket</button>
         <script type="text/javascript">
             $("#create-ticket-button").click(function() {
-                window.location.href = "/tickets/new/";
+                window.location.href = "/staff/new/";
             });
             $("#view-all-button").click(function() {
-                window.location.href = "/tickets/";
+                window.location.href = "/staff/";
             });
             $("#project-view-button").click(function() {
-                window.location.href = "/tickets/project/";
+                window.location.href = "/staff/project/";
             });
         </script>
     </div>
 
-    <form action="/tickets/submit_ticket/" method="POST">
+    <form action="/staff/submit_ticket/" method="POST">
         {% csrf_token %}
         <div class="row">
             <div class="col-md-3">
@@ -88,8 +88,8 @@
                 </div>
             </div>
             <div class="col-md-6" style="text-align: right;">
-                [ <a href="/tickets/">View All Tickets</a> ]<br/>
-                [ <a href="/tickets/my-tickets/">View My Tickets</a> ]
+                [ <a href="/staff/">View All Tickets</a> ]<br/>
+                [ <a href="/staff/my-tickets/">View My Tickets</a> ]
             </div>
         </div>
 

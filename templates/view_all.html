@@ -62,19 +62,19 @@
         <button id="create-ticket-button" class="btn btn-success ticket-button">Create New Ticket</button>
         <script type="text/javascript">
             $("#create-ticket-button").click(function() {
-                window.location.href = "/tickets/new/";
+                window.location.href = "/staff/new/";
             });
             $("#my-tickets").click(function() {
-                window.location.href = "/tickets/my-tickets/";
+                window.location.href = "/staff/my-tickets/";
             });
             $("#view-all-button").click(function() {
-                window.location.href = "/tickets/";
+                window.location.href = "/staff/";
             });
             $("#logout").click(function() {
                 window.location.href = "/logout/";
             });
             $("#project-view-button").click(function() {
-                window.location.href = "/tickets/project/";
+                window.location.href = "/staff/project/";
             });
         </script>
     </div>
@@ -123,15 +123,15 @@
             <tbody>
                 {% for ticket in tickets.object_list %}
                     <tr class="{% cycle 'odd' 'even' %}">
-                        <td><a href="/tickets/view/{{ ticket.id }}/">{{ ticket.id }}</a></td>
-                        <td><a href="/tickets/view/{{ ticket.id }}/">{{ ticket.name }}</a></td>
-                        <td><a href="/tickets/?project={{ ticket.project.id }}">{{ ticket.project.name }}</a></td>
-                        <td><a href="/tickets/?priority={{ ticket.priority.id }}" style="color: {{ ticket.priority.display_color }};">{{ ticket.priority.name }}</a></td>
-                        <td><a href="/tickets/?status={{ ticket.status.id }}">{{ ticket.status }}</a></td>
+                        <td><a href="/staff/view/{{ ticket.id }}/">{{ ticket.id }}</a></td>
+                        <td><a href="/staff/view/{{ ticket.id }}/">{{ ticket.name }}</a></td>
+                        <td><a href="/staff/?project={{ ticket.project.id }}">{{ ticket.project.name }}</a></td>
+                        <td><a href="/staff/?priority={{ ticket.priority.id }}" style="color: {{ ticket.priority.display_color }};">{{ ticket.priority.name }}</a></td>
+                        <td><a href="/staff/?status={{ ticket.status.id }}">{{ ticket.status }}</a></td>
                         {% if ticket.assigned_to %}
-                            <td><a href="/tickets/?assigned_to={{ ticket.assigned_to.id }}">{{ ticket.assigned_to }}</a></td>
+                            <td><a href="/staff/?assigned_to={{ ticket.assigned_to.id }}">{{ ticket.assigned_to }}</a></td>
                         {% else %}
-                            <td><a href="/tickets/?assigned_to=unassigned">Unassigned</a></td>
+                            <td><a href="/staff/?assigned_to=unassigned">Unassigned</a></td>
                         {% endif %}
                         <td>{{ ticket.update_time }}</td>
                     </tr>
@@ -157,7 +157,7 @@
     {% else %}
         <br/><br/>
     {% endif %}
-    <div class="show-closed">[ <a href="/tickets/my-tickets/">My Tickets Only</a> ]</div>
+    <div class="show-closed">[ <a href="/staff/my-tickets/">My Tickets Only</a> ]</div>
 
     {% if show_closed == 'true' %}
         <div class="show-closed">[ <a href="{{ base_url }}&show_closed=false&sort={{ sort }}&order={{ order }}">Hide Closed Tickets</a> ]</div>

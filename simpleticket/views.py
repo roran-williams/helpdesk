@@ -381,7 +381,7 @@ def submit_ticket(request):
         messages.error(request, "could not send email at the moment check your internet connection.")
 
     messages.success(request, "The ticket has been created.")
-    return HttpResponseRedirect("/tickets/view/" + str(ticket.id) + "/")
+    return HttpResponseRedirect("/staff/view/" + str(ticket.id) + "/")
 
 
 
@@ -428,7 +428,7 @@ def submit_comment(request, ticket_id):
             messages.error(request, "email not sent, but coment is still saved.")
 
     messages.success(request, "The comment has been added.")
-    return HttpResponseRedirect(f"/tickets/view/{ticket.id}/")
+    return HttpResponseRedirect(f"/staff/view/{ticket.id}/")
 
 
 @login_required
@@ -493,7 +493,7 @@ def update_ticket(request, ticket_id):
             messages.error(request, "email not send email to the ticket owner or assinee.")    
 
     messages.success(request, "The ticket has been updated.")
-    return HttpResponseRedirect(f"/tickets/view/{ticket.id}/")
+    return HttpResponseRedirect(f"/staff/view/{ticket.id}/")
 
 
 
@@ -518,7 +518,7 @@ def delete_ticket(request, ticket_id):
         email_user(to_email=request.user.email,subject="You have deleted a ticket",message=f"ticket '{ticket.name}' has been deleted!.")
     except Exception:
         messages.error(request, "email not sent.")
-    return HttpResponseRedirect("/tickets/")
+    return HttpResponseRedirect("/staff/")
 
 @login_required
 @admin_required
@@ -533,7 +533,7 @@ def delete_comment(request, comment_id):
         email_user(to_email=comment.commenter.email,subject="coment has been delete",message=f"comment '{comment.ticket.name}' has been deleted!.")
     except Exception:
         messages.error(request, "email not sent but comment deleted.")
-    return HttpResponseRedirect("/tickets/view/" + str(comment.ticket.id) + "/")
+    return HttpResponseRedirect("/staff/view/" + str(comment.ticket.id) + "/")
 
 @login_required
 @admin_required
