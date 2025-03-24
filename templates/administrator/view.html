@@ -1,0 +1,162 @@
+{% extends "administrator/base.html" %}
+{% load static %}
+{% block title %}Ticket: {{ ticket.name }}{% endblock %}
+{% block pagename %}{{ ticket.name }}{% endblock %}
+
+{% block head %}
+    
+    
+{% endblock %}
+
+{% block content %}
+<div class="main-container">
+    <div class="pd-ltr-20 xs-pd-20-10">
+        <div class="min-height-200px">
+            <div class="page-header">
+                <div class="row">
+                    <div class="col-md-12 col-sm-12">
+                        <div class="title">
+                            <h4>Product Detail</h4>
+                        </div>
+                        <nav aria-label="breadcrumb" role="navigation">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item">
+                                    <a href="index.html">Home</a>
+                                </li>
+                                <li class="breadcrumb-item active" aria-current="page">
+                                    Product Detail
+                                </li>
+                            </ol>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+
+            
+    
+    <div class="product-wrap">
+        <div class="product-detail-wrap mb-30">
+    <div class="row">
+        <div class="col-md-5">
+            <div id="project">
+                <label>Project</label> <a href="/administrator/?project={{ ticket.project.id }}">{{ ticket.project.name }}</a>
+            </div>
+
+            <div id="priority">
+                <label>Priority</label> <a href="/administrator/?priority={{ ticket.priority.id }}" style="color: {{ ticket.priority.display_color }};">{{ ticket.priority.name }}</a>
+            </div>
+
+            <div id="status">
+                <label>Status</label> <a href="/administrator/?status={{ ticket.status.id }}">{{ ticket.status.name }}</a>
+            </div>
+
+            <div id="time_logged">
+                <label>Time logged</label> {{ ticket.time_logged }} hours
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div id="created_by">
+                <label>Created by</label> <a href="/administrator/?created_by={{ ticket.assigned_to.id }}">{{ ticket.created_by.username }}</a>
+            </div>
+
+            <div id="assigned_to">
+                {% if ticket.assigned_to %}
+                    <label>Assigned to</label> <a href="/administrator/?assigned_to={{ ticket.created_by.id }}">{{ ticket.assigned_to.username }}</a>
+                {% else %}
+                    <label>Assigned to</label> Unassigned
+                {% endif %}
+            </div>
+
+            <div id="created">
+                <label>Created</label> {{ ticket.creation_time }}
+            </div>
+
+            <div id="updated">
+                <label>Updated</label> {{ ticket.update_time }}
+            </div>
+        </div>
+        
+    </div>
+    
+
+    <hr/>
+
+    <div class="row">
+        <div class="col-md-2">
+            <label>Description</label>
+        </div>
+        <div id="description" class="col-md-10">
+            {{ ticket.desc|safe }}
+        </div>
+    </div>
+
+    <hr/>
+
+    <div class="pagination">
+        <span class="step-links">
+            {% if ticket_comments.has_previous %}
+                <a href="?page={{ ticket_comments.previous_page_number }}">&lt; Previous</a> |
+            {% endif %}
+
+            <span class="current">
+                Page {{ ticket_comments.number }} of {{ ticket_comments.paginator.num_pages }}
+            </span>
+
+            {% if ticket_comments.has_next %}
+                | <a href="?page={{ ticket_comments.next_page_number }}">Next &gt;</a>
+            {% endif %}
+        </span>
+    </div>
+    <h4>Ticket Comments</h4>
+
+    {% for comment in ticket_comments.object_list %}
+        <div class="row ticket-comment {% cycle 'even' 'odd' %}">
+            <div class="col-md-9 comment-text">{{ comment.text|safe|linebreaksbr }}</div>
+            <div class=" col-md-3 comment-info">
+
+                {% if user == comment.commenter %}
+                <div class="delete-comment" title="Delete Comment"><a href="/administrator/delete_comment/{{ comment.id }}/" onclick="JavaScript:return deleteComment({{ comment.id }});"> &#215;</a></div>
+                 {% endif %} 
+
+                <div class="commenter"><label>User</label><a href="/administrator/?created_by=1">{{ comment.commenter.username }}</a></div>
+                <div class="update-time"><label>Updated</label>{{ comment.update_time|date:"H:i, d/m/y" }}</div>
+                <div class="time-logged"><label>Time Logged</label>{{ comment.time_logged }} hours</div>
+            </div>
+        </div>
+    {% endfor %}
+
+    <hr/>
+
+    <div class="add-comment">
+        <h4>Comment on Ticket</h4>
+        <form method="POST" action="/administrator/submit_comment/{{ ticket.id }}/">
+            {% csrf_token %}
+            <div class="row" style="margin-bottom: 20px;">
+                <div class="col-md-9">
+                    <textarea id="comment-text" name="comment-text" class="form-control"></textarea>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="comment-time-logged" style="width: 100%;">Time Logged (Hours)</label>
+                        <input id="comment-time-logged" name="comment-time-logged" class="form-control" type="number" value="0" step="0.1" />
+                    </div>
+                    <div class="form-group">
+                        <label for="comment-status">Status</label>
+                        <select id="comment-status" name="comment-status" class="form-control">
+                            {% for status in status_list %}
+                                <option value="{{ status.id }}" {% if status == ticket.status %}selected="selected"{% endif %}>{{ status.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <input id="submit-comment" type="submit" class="btn btn-primary btn-lg" value="Comment" />
+        </form>
+    </div>
+    </div>
+    </div>
+</div>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "administrator/base.html" %}
+{% block title %}home administrator{% endblock %}
+
+{% block head %}
+        
+{% endblock %}
+
+{% block content %}
+    <body>
+
+        <div class="main-container">
+			<div class="pd-ltr-20 xs-pd-20-10">
+				<div class="min-height-200px">
+					<div class="page-header">
+						<div class="row">
+							<div class="col-md-6 col-sm-12">
+								<div class="title">
+									<h4>Ticket Submisssion Form</h4>
+								</div>
+								<nav aria-label="breadcrumb" role="navigation">
+									<ol class="breadcrumb">
+										<li class="breadcrumb-item">
+											<a href="index.html">Home</a>
+										</li>
+										<li class="breadcrumb-item active" aria-current="page">
+											Form
+										</li>
+									</ol>
+								</nav>
+							</div>
+							
+						</div>
+					</div>
+
+					<div class="html-editor pd-20 card-box mb-30">
+						<h4 class="h4 text-blue">Ticket Details</h4>
+						
+						<form action="/administrator/submit_ticket/" method="POST">
+							{% csrf_token %}
+							
+							<div class="row">
+								<div class="col-md-3">
+									<div class="form-group">
+										<label for="project">Project</label>
+										<select id="project"  name="project" class="form-control">
+											{% for project in project_list %}
+												<option value="{{ project.id }}" {% if project.is_default %}selected="selected"{% endif %}>{{ project.name }}</option>
+											{% endfor %}
+										</select>
+									</div>
+									<div class="form-group">
+										<label for="priority">Priority</label>
+										<select id="priority"  name="priority" class="form-control">
+											{% for priority in priority_list %}
+												<option value="{{ priority.id }}" {% if priority.is_default %}selected="selected"{% endif %} style="color: {{ priority.display_color }};">{{ priority.name }}</option>
+											{% endfor %}
+										</select>
+									</div>
+								</div>
+								<div class="col-md-3">
+									<div class="form-group">
+										<label for="status">Status</label>
+										<select id="status"  name="status" class="form-control">
+											{% for status in status_list %}
+												<option value="{{ status.id }}" {% if status.is_default %}selected="selected"{% endif %}>{{ status.name }}</option>
+											{% endfor %}
+										</select>
+									</div>
+									<div class="form-group">
+										<label for="assigned">Assigned to</label>
+										<select id="assigned"  name="assigned" selected="selected" class="form-control">
+											<option value="unassigned">Unassigned</option>
+											{% for member in tab_users %}
+												<option value="{{ member.id }}">{{ member.username }}</option>
+											{% endfor %}
+										</select>
+									</div>
+								</div>
+							</div>
+						<div class="form-group">
+							<label for="name">Title (summery)</label>
+							<input type="text" name="name" id="name" value="{{ name }}" class="form-control"/>
+						</div>
+
+						
+						<div class="form-group">
+							<label for="desk">Description</label>
+						<textarea 
+							name="desc" 
+							id="desc"
+							class="textarea_editor form-control border-radius-0"
+							placeholder="Describe your ticket here ..."
+						></textarea>
+						</div>
+						
+
+						<div class="pd-20 mb-20 card-box">
+							<a href="image-dropzone.html">click here to add images</a>
+						</div>
+						<input type="submit" class="btn btn-primary btn-lg" value="Submit Ticket" />
+						</form>
+					</div>
+				</div>
+				
+			</div>
+		</div>
+        
+    </body>
+{% endblock %}  
