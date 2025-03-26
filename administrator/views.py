@@ -12,6 +12,7 @@ from simpleticket.utils import email_user
 from django.core.exceptions import PermissionDenied
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 try:
     from urllib.parse import urlencode
 except ImportError:
@@ -46,7 +47,56 @@ def create(request):
 @login_required
 @admin_required
 def dashboard (request):
-    return render(request, 'administrator/dashboard.html')
+    user_list = []
+    others = []
+    users = User.objects.all()
+    for member in users:
+        if member.is_staff:
+            user_list.append(member)
+        else:
+            others.append(member)
+
+    recent_tickets = Ticket.objects.order_by('-creation_time')[:5]
+    all_tickets = Ticket.objects.all()
+    open_tickets = Ticket.objects.exclude(status__name ='closed')
+    closed_tickets = Ticket.objects.filter(status__name ='closed')
+    staff = User.objects.filter(is_staff=True)
+    top_staff = list((
+        Ticket.objects.filter(status__name = 'closed')
+        .exclude(assigned_to = None)
+        .values("assigned_to__username","assigned_to__email",)
+        .annotate(closed_count=Count("id"))
+        .order_by("-closed_count")[:4]
+    ))
+
+    for i in top_staff:
+        print(i["assigned_to__username"])
+
+    
+
+
+    user_list = []
+    u = User.objects.all()
+
+    for member in u:
+        if member.is_staff:
+            user_list.append(member)
+
+    top = staff[:4]
+    top_others = others[:4]
+
+    return render(request, 'administrator/dashboard.html',
+                  {'staff' : staff,
+                   'other_list' : top_others,
+                   'all_tickets':all_tickets,
+                   'open_tickets':open_tickets,
+                   'closed_tickets':closed_tickets,
+                   'recent_tickets':recent_tickets, 
+                   'users':users,
+                   'top_staff':top_staff,
+                   'top':top,
+
+                })
 
 @login_required
 @admin_required
@@ -386,7 +436,7 @@ def submit_ticket(request):
         messages.error(request, "could not send email at the moment check your internet connection.")
 
     messages.success(request, "The ticket has been created.")
-    return HttpResponseRedirect("/staff/view/" + str(ticket.id) + "/")
+    return HttpResponseRedirect("/administrator/view/" + str(ticket.id) + "/")
 
 
 
