@@ -69,8 +69,23 @@ def dashboard (request):
         .order_by("-closed_count")[:4]
     ))
 
-    for i in top_staff:
-        print(i["assigned_to__username"])
+    top_customer = (
+        Ticket.objects.filter(created_by__is_staff = False)
+        .values("created_by__username","created_by__email")
+        .annotate(created_ticket_count=Count("id"))
+        .order_by("-created_ticket_count")[:4]
+    )
+
+    # for i in top_customer:
+    print(top_customer)
+    print(top_customer)
+    print(top_customer)
+    print(top_customer)
+    print(top_customer)
+    print(top_customer)
+    print(top_customer)
+    print(top_customer)
+    print(top_customer)
 
     
 
@@ -94,6 +109,7 @@ def dashboard (request):
                    'recent_tickets':recent_tickets, 
                    'users':users,
                    'top_staff':top_staff,
+                   'top_customer':top_customer,
                    'top':top,
 
                 })
@@ -496,7 +512,7 @@ def update(request, ticket_id):
     project_list = Project.objects.all()
     users_list = User.objects.all()
 
-    return render(request, 'update.html', {'ticket': ticket, 'tab_users': users_list,
+    return render(request, 'administrator/update.html', {'ticket': ticket, 'tab_users': users_list,
                                                         'priority_list': priority_list, 'status_list': status_list,
                                                         'project_list': project_list})
 

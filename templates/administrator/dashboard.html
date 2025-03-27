@@ -275,6 +275,43 @@
                     <div id="diseases-chart">
                         
                     </div>
+                    <div class="user-list">
+                        <ul>
+                            {% for user in top_customer %}
+                            <li class="d-flex align-items-center justify-content-between">
+                                <div class="name-avatar d-flex align-items-center pr-2">
+                                    <div class="avatar mr-2 flex-shrink-0">
+                                        <img
+                                            src="{% static 'vendors/images/photo1.jpg' %}"
+                                            class="border-radius-100 box-shadow"
+                                            width="50"
+                                            height="50"
+                                            alt=""
+                                        />
+                                    </div>
+                                    <div class="txt">
+                                        <span
+                                            class="badge badge-pill badge-sm"
+                                            data-bgcolor="#e7ebf5"
+                                            data-color="#265ed7"
+                                            >{{user.created_ticket_count}} created tickets</span
+                                        >
+                                        <div class="font-14 weight-600">{{user.created_by__username}}</div>
+                                        <div class="font-12 weight-500" data-color="#b2b1b6">
+                                            {{user.created_by__email}}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="cta flex-shrink-0">
+                                    <a href="#" class="btn btn-sm btn-outline-primary"
+                                        >contact</a
+                                    >
+                                </div>
+                            </li>
+                            {% endfor %}
+
+                        </ul>
+                    </div>
                 </div>
             </div>
             <div class="col-lg-4 col-md-12 mb-20">

@@ -250,7 +250,6 @@ def submit_ticket(request):
     ticket.status = Status.objects.get(pk=int(request.POST['status']))
     
 
-
     # Handle case of unassigned tickets
     assigned_option = request.POST.get('assigned', 'unassigned')  # Safely get 'assigned', default to 'unassigned'
     
