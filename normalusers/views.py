@@ -57,11 +57,6 @@ def create(request):
     project_list = Project.objects.all()
     user_list = User.objects.all()
     pos = Status.objects.get(name='submitted')
-    # x=0
-    # for status in status_list:
-    #     x+=1
-    #     if status.name == "submitted":
-    #         pos = x
     return render(request, 'new/create.html', {'tab_users': user_list,"pos":pos.id,
                                               'priority_list': priority_list, 'status_list': status_list,
                                               'project_list': project_list})
@@ -316,6 +311,7 @@ def submit_comment(request, ticket_id):
 
     messages.success(request, "The comment has been added.")
     return HttpResponseRedirect(f"/user/view/{ticket.id}/")
+
 
 
 @login_required

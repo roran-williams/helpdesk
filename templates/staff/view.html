@@ -72,6 +72,7 @@
     </script>
 </head>
 <body class="bg-light">
+    
     <div class="container mt-5">
         
         <div class="card shadow p-4">
@@ -92,6 +93,8 @@
                     Download PDF
                 </a>
             </div>
+            
+            
             <h2 class="text-primary">Ticket #FLT{{ticket.id}}DKE</h2>
             <p><strong>Subject:</strong> <span class="badge bg-black"> {{ ticket.name }}</span></p>
             <p><strong>Project:</strong> <span class="badge bg-black"> {{ ticket.project.name }}</span></p>
@@ -135,9 +138,9 @@
             <div class="col-md-9 comment-text">{{ comment.text|safe|linebreaksbr }}</div>
             <div class=" col-md-3 comment-info">
                 {% if user == comment.commenter %}
-                    <div class="delete-comment" title="Delete Comment"><a href="/user/delete_comment/{{ comment.id }}/" onclick="JavaScript:return deleteComment({{ comment.id }});"> &#215;</a></div>
+                    <div class="delete-comment" title="Delete Comment"><a href="/staff/delete_comment/{{ comment.id }}/" onclick="JavaScript:return deleteComment({{ comment.id }});"> &#215;</a></div>
                 {% endif %}
-                <div class="commenter"><label>User</label><a href="/user/?created_by=1">{{ comment.commenter.username }}</a></div>
+                <div class="commenter"><label>User</label><a href="/staff/?created_by=1">{{ comment.commenter.username }}</a></div>
                 <div class="update-time"><label>Updated</label>{{ comment.update_time|date:"H:i, d/m/y" }}</div>
                 <div class="time-logged"><label>Time Logged</label>{{ comment.time_logged }} hours</div>
             </div>
@@ -146,7 +149,7 @@
             <hr/>
             <div class="add-comment">
                 <h4>Comment on Ticket</h4>
-                <form method="POST" action="/user/submit_comment/{{ ticket.id }}/">
+                <form method="POST" action="/staff/submit_comment/{{ ticket.id }}/">
                     {% csrf_token %}
                     <div class="row" style="margin-bottom: 20px;">
                         <div class="col-md-9">
@@ -170,7 +173,7 @@
                     <input id="submit-comment" type="submit" class="btn btn-primary btn-lg" value="Comment" />
                 </form>
             </div>
-            <a href="/user/" class="btn btn-secondary mt-3">Back to Tickets</a>
+            <a href="/" class="btn btn-secondary mt-3">Back to Tickets</a>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

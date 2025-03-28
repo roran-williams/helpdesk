@@ -12,6 +12,17 @@ from simpleticket.utils import email_user
 from django.core.exceptions import PermissionDenied
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from django.http import HttpResponse
+import os
+from django.conf import settings
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+
 try:
     from urllib.parse import urlencode
 except ImportError:
@@ -39,7 +50,7 @@ def create(request):
         if member.is_staff:
             user_list.append(member)
 
-    return render(request, 'create.html', {'tab_users': user_list,
+    return render(request, 'staff/create.html', {'tab_users': user_list,
                                               'priority_list': priority_list, 'status_list': status_list,
                                               'project_list': project_list})
 
@@ -61,7 +72,7 @@ def view(request, ticket_id=1):
     except (EmptyPage, InvalidPage):
         ticket_comments = paginator.page(paginator.num_pages)
 
-    return render(request, 'view.html', {'ticket': ticket, 'status_list': status_list, 'ticket_comments': ticket_comments})
+    return render(request, 'staff/view.html', {'ticket': ticket, 'status_list': status_list, 'ticket_comments': ticket_comments})
 
 @login_required
 @admin_required
@@ -197,13 +208,11 @@ def view_all(request):
     get_params = '&'.join(pairs)
     prev_link = request.path + '?' + get_params
 
-    return render(request, 'view_all.html', {'tickets': tickets,'my_tickets':my_tickets, 'filter': filter,
+    return render(request, 'staff/view_all.html', {'tickets': tickets,'my_tickets':my_tickets, 'filter': filter,
                                                           'filter_message': filter_message, 'base_url': base_url,
                                                           'next_link': next_link, 'prev_link': prev_link,
                                                           'sort': sort_setting, 'order': order_setting,
                                                           'show_closed': show_closed})
-
-
 @login_required
 def view_my_tickets(request):
     user_tickets = Ticket.objects.filter(created_by=request.user)
@@ -340,12 +349,11 @@ def view_my_tickets(request):
 
     
 
-    return render(request, 'my-tickets.html', { 'tickets': tickets, 'filter': filter,
+    return render(request, 'staff/view_all.html', { 'tickets': tickets, 'filter': filter,
                                                           'filter_message': filter_message, 'base_url': base_url,
                                                           'next_link': next_link, 'prev_link': prev_link,
                                                           'sort': sort_setting, 'order': order_setting,
                                                           'show_closed': show_closed})
-
 @login_required
 @admin_required
 def submit_ticket(request):
@@ -382,9 +390,6 @@ def submit_ticket(request):
 
     messages.success(request, "The ticket has been created.")
     return HttpResponseRedirect("/staff/view/" + str(ticket.id) + "/")
-
-
-
 
 @login_required
 @admin_required
@@ -430,7 +435,6 @@ def submit_comment(request, ticket_id):
     messages.success(request, "The comment has been added.")
     return HttpResponseRedirect(f"/staff/view/{ticket.id}/")
 
-
 @login_required
 @admin_required
 def update(request, ticket_id):
@@ -441,10 +445,9 @@ def update(request, ticket_id):
     project_list = Project.objects.all()
     users_list = User.objects.filter(is_staff=True)
 
-    return render(request, 'update.html', {'ticket': ticket, 'tab_users': users_list,
+    return render(request, 'staff/update.html', {'ticket': ticket, 'tab_users': users_list,
                                                         'priority_list': priority_list, 'status_list': status_list,
                                                         'project_list': project_list})
-
 
 @login_required
 @admin_required
@@ -495,8 +498,6 @@ def update_ticket(request, ticket_id):
     messages.success(request, "The ticket has been updated.")
     return HttpResponseRedirect(f"/staff/view/{ticket.id}/")
 
-
-
 @login_required
 @admin_required
 def delete_ticket(request, ticket_id):
@@ -541,3 +542,72 @@ def project(request):
     project_list = Project.objects.all()
 
     return render(request, 'project.html', {'project_list': project_list})
+
+def generate_ticket_pdf(request, ticket_id):
+    # Retrieve the ticket from the database
+    try:
+        ticket = Ticket.objects.get(id=ticket_id)
+    except Ticket.DoesNotExist:
+        return HttpResponse("Ticket not found", status=404)
+
+    # Define the response as a PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="ticket_{ticket_id}.pdf"'
+
+    # Create PDF document
+    pdf = SimpleDocTemplate(response, pagesize=letter)
+    elements = []
+
+    # Add company logo
+    logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'fanan_logo.jpg')
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=100, height=50)
+        elements.append(logo)
+
+    # Add ticket title
+    title_style = ParagraphStyle(name="TitleStyle", fontSize=18, alignment=1, spaceAfter=10, textColor=colors.black)
+    elements.append(Paragraph(f"<b>Ticket #{ticket.id}</b>", title_style))
+    elements.append(Spacer(1, 10))
+
+    # Define priority color style
+    priority_style = ParagraphStyle(name="PriorityStyle", textColor=ticket.priority.display_color)
+
+    # Ticket details table
+    data = [
+        ["Subject:", ticket.name],
+        ["Project:", ticket.project],
+        ["Status:", ticket.status],
+        ["Priority:", Paragraph(ticket.priority.name, priority_style)],
+        ["Time Allocated:", f"{ticket.time_logged} HRS"],
+        ["Created By:", ticket.created_by.username],
+        ["Assigned To:", ticket.assigned_to.username if ticket.assigned_to else "Unassigned"],
+        ["Created On:", ticket.creation_time.strftime("%Y-%m-%d %H:%M:%S")],
+        ["Last Updated:", ticket.update_time.strftime("%Y-%m-%d %H:%M:%S")],
+    ]
+
+    table = Table(data, colWidths=[150, 350])
+    table.setStyle(
+        TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ])
+    )
+
+    elements.append(table)
+    elements.append(Spacer(1, 20))
+
+    # Description
+    desc_style = ParagraphStyle(name="DescriptionStyle", fontSize=12, spaceBefore=10, spaceAfter=5, textColor=colors.black)
+    elements.append(Paragraph("<b>Description</b>", desc_style))
+    elements.append(Paragraph(ticket.desc, desc_style))
+
+    # Build the PDF
+    pdf.build(elements)
+    return response
