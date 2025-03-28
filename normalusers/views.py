@@ -56,16 +56,13 @@ def create(request):
     status_list = Status.objects.all()
     project_list = Project.objects.all()
     user_list = User.objects.all()
-    
-    x=0
-    for status in status_list:
-        x+=1
-        if status.name == "submitted":
-            pos = x
-            
-
-
-    return render(request, 'u/create.html', {'tab_users': user_list,"pos":pos,
+    pos = Status.objects.get(name='submitted')
+    # x=0
+    # for status in status_list:
+    #     x+=1
+    #     if status.name == "submitted":
+    #         pos = x
+    return render(request, 'new/create.html', {'tab_users': user_list,"pos":pos.id,
                                               'priority_list': priority_list, 'status_list': status_list,
                                               'project_list': project_list})
 
@@ -92,7 +89,7 @@ def view(request, ticket_id=1):
     except (EmptyPage, InvalidPage):
         ticket_comments = paginator.page(paginator.num_pages)
 
-    return render(request, 'u/view.html', {'user':request.user, 'ticket': ticket, 'status_list': status_list, 'ticket_comments': ticket_comments})
+    return render(request, 'new/view.html', {'user':request.user, 'ticket': ticket, 'status_list': status_list, 'ticket_comments': ticket_comments})
 
 @login_required
 def view_all(request):
@@ -230,7 +227,7 @@ def view_all(request):
 
     
 
-    return render(request, 'u/view_all.html', { 'tickets': tickets, 'filter': filter,
+    return render(request, 'new/view_all.html', { 'tickets': tickets, 'filter': filter,
                                                           'filter_message': filter_message, 'base_url': base_url,
                                                           'next_link': next_link, 'prev_link': prev_link,
                                                           'sort': sort_setting, 'order': order_setting,
@@ -330,7 +327,7 @@ def update(request, ticket_id):
     project_list = Project.objects.all()
     users_list = User.objects.all()
 
-    return render(request, 'u/update.html', {'ticket': ticket, 'tab_users': users_list,
+    return render(request, 'new/update.html', {'ticket': ticket, 'tab_users': users_list,
                                                         'priority_list': priority_list, 'status_list': status_list,
                                                         'project_list': project_list})
 
@@ -380,13 +377,17 @@ def delete_ticket(request, ticket_id):
 
  
 @login_required
-@ticket_creator_permission_required
 def delete_comment(request, comment_id):
     # Get the ticket
     comment = get_object_or_404(TicketComment, pk=comment_id)
     # Delete the ticket
     comment.delete()
     messages.success(request, "The comment has been deleted.")
+
+    try:
+        email_user(to_email=comment.commenter.email,subject="coment has been delete",message=f"comment '{comment.ticket.name}' has been deleted!.")
+    except Exception:
+        messages.error(request, "email not sent but comment deleted.")
     return HttpResponseRedirect("/user/view/" + str(comment.ticket.id) + "/")
 
 @login_required

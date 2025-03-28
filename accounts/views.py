@@ -16,4 +16,4 @@ def register(request):
             messages.error(request, "Please correct the errors below.")
     else:
         form = RegistrationForm()
-    return render(request, 'registration/register.html', {'form': form})
+    return render(request, 'register.html', {'form': form})

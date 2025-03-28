@@ -13,6 +13,9 @@ from django.core.exceptions import PermissionDenied
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
+from dateutil.relativedelta import relativedelta
+from django.utils import timezone
+from datetime import timedelta
 try:
     from urllib.parse import urlencode
 except ImportError:
@@ -47,6 +50,7 @@ def create(request):
 @login_required
 @admin_required
 def dashboard (request):
+    today = timezone.now().date()
     user_list = []
     others = []
     users = User.objects.all()
@@ -76,20 +80,15 @@ def dashboard (request):
         .order_by("-created_ticket_count")[:4]
     )
 
+    first_day_last_month = today.replace(day=1) - relativedelta(months=1)
+    last_day_last_month = today.replace(day=1) - timedelta(days=1)
+
+    tickets_last_month = Ticket.objects.filter(
+    creation_time__date__range=[first_day_last_month, last_day_last_month]
+    )
+
+
     # for i in top_customer:
-    print(top_customer)
-    print(top_customer)
-    print(top_customer)
-    print(top_customer)
-    print(top_customer)
-    print(top_customer)
-    print(top_customer)
-    print(top_customer)
-    print(top_customer)
-
-    
-
-
     user_list = []
     u = User.objects.all()
 
@@ -111,6 +110,7 @@ def dashboard (request):
                    'top_staff':top_staff,
                    'top_customer':top_customer,
                    'top':top,
+                   'tickets_last_month':tickets_last_month,
 
                 })
 
@@ -510,7 +510,7 @@ def update(request, ticket_id):
     priority_list = Priority.objects.all()
     status_list = Status.objects.all()
     project_list = Project.objects.all()
-    users_list = User.objects.all()
+    users_list = User.objects.filter(is_staff=True)
 
     return render(request, 'administrator/update.html', {'ticket': ticket, 'tab_users': users_list,
                                                         'priority_list': priority_list, 'status_list': status_list,

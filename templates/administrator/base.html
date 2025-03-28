@@ -47,6 +47,8 @@
 		/>
 		<link rel="stylesheet" type="text/css" href="{% static 'vendors/styles/style.css' %}" />
 
+		<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 		<!-- Global site tag (gtag.js) - Google Analytics -->
 		<script
 			async
@@ -301,7 +303,7 @@
 					</div>
 				</div>
 				<div class="github-link">
-					<a href="https://github.com/dropways/deskapp" target="_blank"
+					<a href="#" target="_blank"
 						><img src="{% static 'vendors/images/github.svg' %}" alt=""
 					/></a>
 				</div>
@@ -522,7 +524,7 @@
 							</a>
 							<ul class="submenu">
 								
-								<li><a href="/administrator/">All Tickets</a></li>
+								<li><a href="/administrator/tickets">All Tickets</a></li>
 							</ul>
 						</li>
 						<li>
@@ -588,7 +590,7 @@
 							</a>
 							<ul class="submenu">
 								<li><a href="video-player.html">Video Player</a></li>
-								<li><a href="login.html">Login</a></li>
+								<li><a href="/login">Login</a></li>
 								<li><a href="forgot-password.html">Forgot Password</a></li>
 								<li><a href="reset-password.html">Reset Password</a></li>
 							</ul>
@@ -714,6 +716,8 @@
 		<script src="{% static 'vendors/scripts/script.min.js' %}"></script>
 		<script src="{% static 'vendors/scripts/process.js' %}"></script>
 		<script src="{% static 'vendors/scripts/layout-settings.js' %}"></script>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 		<!-- Google Tag Manager (noscript) -->
 		<noscript
 			><iframe

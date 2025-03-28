@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fanan Limited Helpdesk</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <header class="bg-primary text-white py-3">
+        <div class="container d-flex justify-content-between align-items-center">
+            <h1 class="h3">Fanan Helpdesk</h1>
+            <nav>
+                <a href="#features" class="text-white me-3">Features</a>
+                <a href="#contact" class="text-white me-3">Contact</a>
+                {% if not login_user %}
+                <a href="/login" class="btn btn-light text-primary">Login</a>
+                {% else %}
+                <a href="/logout" class="btn btn-light text-primary">Logout </a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+    
+    <section class="text-center py-5 bg-white">
+        <div class="container">
+            {% if not login_user %}
+            <h2 class="display-4 text-dark">Welcome to Fanan Helpdesk</h2>
+            <p class="text-muted mt-3">Efficient ticketing, real-time support, and a seamless experience.</p>
+            <a href="/register" class="btn btn-primary mt-4">Sign up</a>
+            
+             {% else %}
+            <h2 class="display-4 text-dark"> Welcome to Fanan Helpdesk {{user}}</h2>
+            <p class="text-muted mt-3">Efficient ticketing, real-time support, and a seamless experience.</p>
+            {% endif %}
+            
+        </div>
+    </section>
+    
+    {% if not login_user %}
+    <section id="features" class="py-5 bg-light">
+        <div class="container text-center">
+            <h3 class="h2 text-dark">Key Features</h3>
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm p-4">
+                        <h4 class="h5">Ticketing System</h4>
+                        <p class="text-muted">Submit and track support tickets with ease.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm p-4">
+                        <h4 class="h5">Real-Time Notifications</h4>
+                        <p class="text-muted">Stay updated with instant alerts and updates.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm p-4">
+                        <h4 class="h5">Knowledge Base</h4>
+                        <p class="text-muted">Find solutions with our comprehensive documentation.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% else %}
+    <section id="features" class="py-5 bg-light">
+        <div class="container text-center">
+            <h3 class="h2 text-dark">Key Features</h3>
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card shadow-sm p-4">
+                        <h4 class="h5">
+                            {% if user.is_staff%}
+                            <a href="/staff/new/">Submit a Ticketing</a>
+                            {% else %}
+                            <a href="/user/new/">Submit a Ticketing</a>
+                            {% endif %}
+
+                        </h4>
+                        <p class="text-muted">Submit and track tickets with ease.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm p-4">
+                        <h4 class="h5">
+                            <a href="#">View Tickets</a>
+                        </h4>
+                        <p class="text-muted">Stay updated ,check previous tickets.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card shadow-sm p-4">
+                        <h4 class="h5">
+                            <a href="#">Knowledge Base</a>
+                        </h4>
+                        <p class="text-muted">Find solutions with our comprehensive documentation.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+    
+    <section id="contact" class="py-5 bg-white text-center">
+        <div class="container">
+            <h3 class="h2 text-dark">Need Help?</h3>
+            <p class="text-muted mt-3">Reach out to us anytime for assistance.</p>
+            <a href="mailto:support@fananlimited.com" class="btn btn-primary mt-3">Contact Support</a>
+        </div>
+    </section>
+    
+    <footer class="bg-primary text-white text-center py-3 mt-5">
+        <p class="mb-0">&copy; 2025 Fanan Limited. All rights reserved.</p>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

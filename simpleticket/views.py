@@ -439,7 +439,7 @@ def update(request, ticket_id):
     priority_list = Priority.objects.all()
     status_list = Status.objects.all()
     project_list = Project.objects.all()
-    users_list = User.objects.all()
+    users_list = User.objects.filter(is_staff=True)
 
     return render(request, 'update.html', {'ticket': ticket, 'tab_users': users_list,
                                                         'priority_list': priority_list, 'status_list': status_list,
