@@ -8,6 +8,16 @@ from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from django.http import HttpResponse
+import os
+from django.conf import settings
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 
 try:
     from urllib.parse import urlencode
@@ -56,8 +66,12 @@ def create(request):
     status_list = Status.objects.all()
     project_list = Project.objects.all()
     user_list = User.objects.all()
-    pos = Status.objects.get(name='submitted')
-    return render(request, 'new/create.html', {'tab_users': user_list,"pos":pos.id,
+    support_staff = []
+    for member in user_list:
+        if member.has_perm('simpleticket.change_status') and not member.is_superuser:
+            support_staff.append(member)
+
+    return render(request, 'new/create.html', {'tab_users': support_staff,
                                               'priority_list': priority_list, 'status_list': status_list,
                                               'project_list': project_list})
 
@@ -317,15 +331,39 @@ def submit_comment(request, ticket_id):
 @login_required
 def update(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
-
+    allowed_to_change_ticket = request.user.has_perm('simpleticket.change_ticket') 
+    allowed_to_change_ticket_status = request.user.has_perm('simpleticket.change_status')
+    allowed_to_change_ticket_project = request.user.has_perm('simpleticket.change_project')
+    allowed_to_change_ticket_priority = request.user.has_perm('simpleticket.change_priority')
+    allowed_to_assign_ticket = request.user.has_perm('simpleticket.assign_ticket')
+    you_created_ticket = ticket.created_by == request.user
+    set_priority = you_created_ticket and (ticket.assigned_to == None)
+    
     priority_list = Priority.objects.all()
     status_list = Status.objects.all()
     project_list = Project.objects.all()
     users_list = User.objects.all()
+    support_staff = []
+    for member in users_list:
+        if member.has_perm('simpleticket.change_status') and not member.is_superuser:
+            support_staff.append(member)
 
-    return render(request, 'new/update.html', {'ticket': ticket, 'tab_users': users_list,
-                                                        'priority_list': priority_list, 'status_list': status_list,
-                                                        'project_list': project_list})
+
+    return render(request, 'new/update.html', {
+        'ticket': ticket, 
+        'tab_users': support_staff,
+        'allowed_to_change_ticket':allowed_to_change_ticket,
+        'allowed_to_assign_ticket':allowed_to_assign_ticket, 
+        'allowed_to_change_ticket_project':allowed_to_change_ticket_project,
+        'allowed_to_change_ticket_status':allowed_to_change_ticket_status,
+        'allowed_to_change_ticket_priority':allowed_to_change_ticket_priority,
+        'priority_list': priority_list, 
+        'status_list': status_list,
+        'project_list': project_list,
+        'set_priority':set_priority,
+        'you_created_ticket':you_created_ticket,
+        })
+
 
 
 @login_required
@@ -390,3 +428,73 @@ def delete_comment(request, comment_id):
 def project(request):
     project_list = Project.objects.all()
     return render(request, 'u/project.html', {'project_list': project_list})
+
+@ticket_creator_permission_required
+def generate_ticket_pdf(request, ticket_id):
+    # Retrieve the ticket from the database
+    try:
+        ticket = Ticket.objects.get(id=ticket_id)
+    except Ticket.DoesNotExist:
+        return HttpResponse("Ticket not found", status=404)
+
+    # Define the response as a PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="ticket_{ticket_id}.pdf"'
+
+    # Create PDF document
+    pdf = SimpleDocTemplate(response, pagesize=letter)
+    elements = []
+
+    # Add company logo
+    logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'fanan_logo.jpg')
+    if os.path.exists(logo_path):
+        logo = Image(logo_path, width=100, height=50)
+        elements.append(logo)
+
+    # Add ticket title
+    title_style = ParagraphStyle(name="TitleStyle", fontSize=18, alignment=1, spaceAfter=10, textColor=colors.black)
+    elements.append(Paragraph(f"<b>Ticket #{ticket.id}</b>", title_style))
+    elements.append(Spacer(1, 10))
+
+    # Define priority color style
+    priority_style = ParagraphStyle(name="PriorityStyle", textColor=ticket.priority.display_color)
+
+    # Ticket details table
+    data = [
+        ["Subject:", ticket.name],
+        ["Project:", ticket.project],
+        ["Status:", ticket.status],
+        ["Priority:", Paragraph(ticket.priority.name, priority_style)],
+        ["Time Allocated:", f"{ticket.time_logged} HRS"],
+        ["Created By:", ticket.created_by.username],
+        ["Assigned To:", ticket.assigned_to.username if ticket.assigned_to else "Unassigned"],
+        ["Created On:", ticket.creation_time.strftime("%Y-%m-%d %H:%M:%S")],
+        ["Last Updated:", ticket.update_time.strftime("%Y-%m-%d %H:%M:%S")],
+    ]
+
+    table = Table(data, colWidths=[150, 350])
+    table.setStyle(
+        TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ])
+    )
+
+    elements.append(table)
+    elements.append(Spacer(1, 20))
+
+    # Description
+    desc_style = ParagraphStyle(name="DescriptionStyle", fontSize=12, spaceBefore=10, spaceAfter=5, textColor=colors.black)
+    elements.append(Paragraph("<b>Description</b>", desc_style))
+    elements.append(Paragraph(ticket.desc, desc_style))
+
+    # Build the PDF
+    pdf.build(elements)
+    return response

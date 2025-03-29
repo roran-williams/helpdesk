@@ -44,13 +44,13 @@ def create(request):
     status_list = Status.objects.all()
     project_list = Project.objects.all()
     
-    user_list = []
-    u = User.objects.all()
-    for member in u:
-        if member.is_staff:
-            user_list.append(member)
+    user_list = User.objects.all()
+    support_staff = []
+    for member in user_list:
+        if member.has_perm('simpleticket.change_status') and not member.is_superuser:
+            support_staff.append(member)
 
-    return render(request, 'staff/create.html', {'tab_users': user_list,
+    return render(request, 'staff/create.html', {'tab_users': support_staff,
                                               'priority_list': priority_list, 'status_list': status_list,
                                               'project_list': project_list})
 
@@ -439,22 +439,39 @@ def submit_comment(request, ticket_id):
 @admin_required
 def update(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
-
+    
+    allowed_to_change_ticket = request.user.has_perm('simpleticket.change_ticket') 
+    allowed_to_change_ticket_status = request.user.has_perm('simpleticket.change_status')
+    allowed_to_change_ticket_project = request.user.has_perm('simpleticket.change_project')
+    allowed_to_change_ticket_priority = request.user.has_perm('simpleticket.change_priority')
+    allowed_to_assign_ticket = request.user.has_perm('simpleticket.assign_ticket')
+    
     priority_list = Priority.objects.all()
     status_list = Status.objects.all()
     project_list = Project.objects.all()
     users_list = User.objects.filter(is_staff=True)
+    support_staff = []
+    for u in users_list:
+        if u.has_perm('simpleticket.change_status') and not u.is_superuser:
+            support_staff.append(u)
+            
 
-    return render(request, 'staff/update.html', {'ticket': ticket, 'tab_users': users_list,
-                                                        'priority_list': priority_list, 'status_list': status_list,
-                                                        'project_list': project_list})
+    return render(request, 'staff/update.html', {
+        'ticket': ticket,
+        'allowed_to_change_ticket':allowed_to_change_ticket,
+        'allowed_to_assign_ticket':allowed_to_assign_ticket, 
+        'allowed_to_change_ticket_project':allowed_to_change_ticket_project,
+        'allowed_to_change_ticket_status':allowed_to_change_ticket_status,
+        'allowed_to_change_ticket_priority':allowed_to_change_ticket_priority,
+        'tab_users': support_staff,
+        'priority_list': priority_list, 'status_list': status_list,
+        'project_list': project_list})
 
 @login_required
 @admin_required
 def update_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
     previously_assigned = ticket.assigned_to
-
     # Check if the user has permission to change the status
     if not request.user.has_perm('simpleticket.change_status'):
         # If the status is being changed, deny access
@@ -462,13 +479,20 @@ def update_ticket(request, ticket_id):
         if status != ticket.status:
             raise PermissionDenied("You do not have permission to change the ticket status.")
 
+     # Check if the user has permission to assign tickets
+    if not request.user.has_perm('simpleticket.assign_ticket'):
+        # If the assinee is being changed, deny access
+        assigned_option = request.POST['assigned']
+        assigned = None if assigned_option == 'unassigned' else User.objects.get(pk=int(request.POST['assigned']))
+        if assigned != ticket.assigned_to:
+            raise PermissionDenied("You do not have permission to assign tickets")
+            
+    
     project = Project.objects.get(pk=int(request.POST['project']))
     priority = Priority.objects.get(pk=int(request.POST['priority']))
     status = Status.objects.get(pk=int(request.POST['status']))
 
-    if not request.user.has_perm('assign_ticket'):
-        raise PermissionDenied("You do not have permission to assign tickets.")
-
+    
     assigned_option = request.POST['assigned']
     assigned_to = None if assigned_option == 'unassigned' else User.objects.get(pk=int(assigned_option))
 
@@ -542,7 +566,7 @@ def project(request):
     project_list = Project.objects.all()
 
     return render(request, 'project.html', {'project_list': project_list})
-
+@admin_required
 def generate_ticket_pdf(request, ticket_id):
     # Retrieve the ticket from the database
     try:

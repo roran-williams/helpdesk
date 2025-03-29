@@ -73,7 +73,7 @@ class Ticket(models.Model):
         permissions = [
             ('can_view_status', 'Can view ticket status'),
             ('can_change_status', 'Can change ticket status'),
-            ('assign_ticket', 'Can assign tickets'),
+            ('can_assign_ticket', 'Can assign tickets'),
         ]
 
 

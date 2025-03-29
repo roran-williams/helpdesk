@@ -79,9 +79,9 @@
             {% if messages %}
                 {% for message in messages %}
                     {% if message.tags == 'error' %}
-                        <div class="alert alert-danger">{{ message }}</div>
+                        <div class="alert card shadow badge alert-danger">{{ message }}</div>
                     {% else %}
-                        <div {% if message.tags %}class="alert alert-{{ message.tags }}"{% endif %}>{{ message }}</div>
+                        <div {% if message.tags %}class=" card shadow badge alert alert-{{ message.tags }}"{% endif %}>{{ message }}</div>
                     {% endif %}
                 {% endfor %}
             {% endif %}

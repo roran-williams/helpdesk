@@ -37,6 +37,7 @@
                 {% csrf_token %}
                 <div class="row">
                     <div class="col-md-3">
+                        {% if allowed_to_change_project or you_created_ticket %}
                         <div class="form-group">
                             <label for="project">Project</label>
                             <select id="project"  name="project" class="form-control">
@@ -45,6 +46,18 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        {% else %}
+                        <div class="form-group">
+                            <label for="project">Project</label>
+                            <select id="project"  name="project" class="form-control" hidden>
+                                {% for project in project_list %}
+                                    <option value="{{ project.id }}" {% if ticket.project.id == project.id %}selected="selected"{% endif %}>{{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <p class="form-control">{{ticket.project.name}}</p>
+                        </div>
+                        {% endif %}
+                        {% if allowed_to_change_priority or set_priority %}
                         <div class="form-group">
                             <label for="priority">Priority</label>
                             <select id="priority"  name="priority" class="form-control">
@@ -53,8 +66,21 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        {% else %}
+                        <div class="form-group">
+                            <label for="priority">Priority</label>
+                            <select id="priority"  name="priority" class="form-control" hidden>
+                                {% for priority in priority_list %}
+                                    <option value="{{ priority.id }}" {% if ticket.priority.id == priority.id %}selected="selected"{% endif %} style="color: {{ priority.display_color }};">{{ priority.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <p class="form-control"  style="color: {{ priority.display_color }};">{{ ticket.priority.name }}</p>
+                        </div>
+                        {% endif %}
+
                     </div>
                     <div class="col-md-3">
+                        {% if allowed_to_change_status %}
                         <div class="form-group">
                             <label for="status">Status</label>
                             <select id="status"  name="status" class="form-control">
@@ -63,6 +89,19 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        {% else %}
+                        <div class="form-group">
+                            <label for="status">Status</label>
+                            <select id="status"  name="status" class="form-control" hidden>
+                                {% for status in status_list %}
+                                    <option value="{{ status.id }}" {% if ticket.status.id == status.id %}selected="selected"{% endif %}>{{ status.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <p class="form-control">{{ticket.status.name}}</p>
+                        </div>
+                        {% endif %}
+
+                        {% if allowed_to_assign_ticket %}
                         <div class="form-group">
                             <label for="assigned">Assigned to</label>
                             <select id="assigned"  name="assigned" selected="selected" class="form-control">
@@ -72,12 +111,24 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        {% else %}
+                        <div class="form-group">
+                            <label for="assigned">Assigned to</label>
+                            <select id="assigned"  name="assigned" selected="selected" class="form-control" hidden>
+                                <option value="unassigned" {% if ticket.assigned_to == None %}selected="selected"{% endif %}>Unassigned</option>
+                                {% for member in tab_users %}
+                                    <option value="{{ member.id }}" {% if ticket.assigned_to.id == member.id %}selected="selected"{% endif %}>{{ member.username }}</option>
+                                {% endfor %}
+                            </select>
+                            <p class="form-control">{{ticket.assigned_to}}</p>
+                        </div>
+                        {% endif %}
                     </div>
                     
                 </div>
         
                 <hr />
-        
+                {% if allowed_to_change_ticket or you_created_ticket %}
                 <div class="form-group">
                     <label for="name">Name</label>
                     <input type="text" name="name" id="name" class="form-control" value="{{ ticket.name }}"/>
@@ -86,6 +137,18 @@
                 <label for="desc">Description</label>
                 <textarea class="form-control" name="desc" id="desc">{{ ticket.desc }}</textarea>
                 </div>
+                {% else %}
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" name="name" id="name" class="form-control" value="{{ ticket.name }}" hidden/>
+                    <p class="form-control">{{ticket.name}}</p>
+                </div>
+                <div class="form-group" >
+                <label for="desc">Description</label>
+                <textarea class="form-control" name="desc" id="desc" hidden>{{ ticket.desc }}</textarea>
+                <p class="form-control">{{ticket.desc}}</p>
+            </div>
+                {% endif %}
                 <br />
                 <input type="submit" class="btn btn-primary btn-lg" value="Update" />
             </form>

@@ -13,7 +13,6 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
             <a class="navbar-brand" href="/">Fanan Helpdesk</a>
-            <b class="text-white">welcome {{user}}</b>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -28,23 +27,6 @@
             </div>
         </div>
     </nav>
-
-    <div class="container ">
-        <div class="row">
-            <div class="col-md-12 pd-20">
-                <!-- Handle Messages -->
-                {% if messages %}
-                    {% for message in messages %}
-                        {% if message.tags == 'error' %}
-                            <div class="alert alert-danger">{{ message }}</div>
-                        {% else %}
-                            <div {% if message.tags %}class="alert alert-{{ message.tags }}"{% endif %}>{{ message }}</div>
-                        {% endif %}
-                    {% endfor %}
-                {% endif %}
-            </div>
-        </div>
-    </div>
 
     <!-- Main Content -->
     <div class="container mt-4">

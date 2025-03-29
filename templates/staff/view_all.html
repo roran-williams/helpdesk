@@ -34,6 +34,14 @@
 <body class="bg-light">
     
     <div class="container mt-5">
+        {% if messages %}
+        {% for message in messages %}
+            {% if message.tags == 'error' %}
+                <div class="alert card shadow badge alert-danger">{{ message }}</div>                {% else %}
+                <div {% if message.tags %}class=" card shadow badge alert alert-{{ message.tags }}"{% endif %}>{{ message }}</div>
+            {% endif %}
+        {% endfor %}
+    {% endif %}
         {% if tickets.object_list.count > 0 %}
         <div class="pagination">
             <span class="step-links">
@@ -51,6 +59,7 @@
             </span>
         </div>
     {% endif %}
+    
         <h2 class="text-primary text-center">Support Tickets</h2>
         <div class="table-responsive mt-4">
             {% if tickets.object_list.count > 0 %}

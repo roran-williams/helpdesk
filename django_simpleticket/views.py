@@ -17,6 +17,8 @@ def fanan(request):
     login_user = request.user.is_authenticated
     return render(request, "new/landing.html",{'login_user':login_user})
 
+def knowledge_base(request):
+    return render(request, "new/knowledge_base.html")
 
 def home(request):
     if request.user.is_staff:
