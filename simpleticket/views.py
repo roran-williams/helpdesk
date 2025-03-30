@@ -527,7 +527,7 @@ def update_ticket(request, ticket_id):
 def delete_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
 
-    if not request.user.has_perm('simpleticket.delete_ticket'):
+    if not (request.user.has_perm('simpleticket.delete_ticket') or request.user.is_superuser):
         raise PermissionDenied("You do not have permission to delete this ticket.")
 
     TicketComment.objects.filter(ticket=ticket).delete()
@@ -634,4 +634,69 @@ def generate_ticket_pdf(request, ticket_id):
 
     # Build the PDF
     pdf.build(elements)
+    return response
+
+
+from django.http import JsonResponse
+from django.db.models import Count, Avg
+from django.utils.timezone import now, timedelta
+from django.db.models.functions import TruncDate
+from .models import Ticket
+
+@admin_required
+def get_ticket_data(request):
+    """ API to return ticket analytics as JSON """
+
+    # 📊 Ticket Status Distribution
+    ticket_status = Ticket.objects.values('status__name').annotate(count=Count('id'))
+    
+    # 📅 Tickets Over Time (Last 30 Days)
+    last_30_days = now() - timedelta(days=30)
+    tickets_per_day = (
+        Ticket.objects.filter(creation_time__gte=last_30_days)
+        .annotate(day=TruncDate('creation_time'))
+        .values('day')
+        .annotate(count=Count('id'))
+        .order_by('day')
+    )
+
+    # 🎯 Agent Performance
+    agent_performance = (
+        Ticket.objects.filter(status__name="closed")
+        .values('assigned_to__username')
+        .annotate(resolved_tickets=Count('id'))
+        .order_by('-resolved_tickets')
+    )
+
+    # ⏳ Average Resolution Time
+    avg_resolution = Ticket.objects.aggregate(Avg('time_logged'))['time_logged__avg'] or 0
+
+    data = {
+        "ticket_status": list(ticket_status),
+        "tickets_over_time": list(tickets_per_day),
+        "agent_performance": list(agent_performance),
+        "avg_resolution": round(avg_resolution, 2),
+    }
+    
+    return JsonResponse(data)
+
+@admin_required
+def analytics(request):
+    return render(request, 'staff/analytics.html')
+
+import csv
+from django.http import HttpResponse
+
+@admin_required
+def download_csv_report(request):
+    """ Generate a CSV report for analytics """
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="helpdesk_report.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(["Status", "Ticket Count"])
+    
+    for status in Ticket.objects.values('status__name').annotate(count=Count('id')):
+        writer.writerow([status['status__name'], status['count']])
+
     return response

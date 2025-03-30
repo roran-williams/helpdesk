@@ -85,13 +85,12 @@
                     {% endif %}
                 {% endfor %}
             {% endif %}
-            <div class="col-md-2" style="text-align: right;">
-                <div><a style="color: black;" class="badge bg-warning" href="/staff/my-tickets/?user={{ user.id }}">View My Tickets</a> </div>
-                <div><a style="color: black;" class="badge bg-warning" href="/staff/update/{{ ticket.id }}/">Update Ticket</a></div>
-                <div><a style="color: black;" class="badge bg-warning" onclick="return confirm('Are you sure you want to delete this ticket?');" href="/staff/delete/{{ ticket.id }}/">Delete Ticket</a> </div>
-                <a href="/staff/ticket/{{ticket.id}}/pdf/" class="btn btn-success mt-3">
+            <div style="text-align: right;">
+                <div><a style="color: black;" class="badge card shadow bg-warning" href="/user/update/{{ ticket.id }}/">Update Ticket</a></div>
+                <div><a style="color: black;" class="badge card shadow bg-danger" onclick="return confirm('Are you sure you want to delete this ticket?');" href="/user/delete/{{ ticket.id }}/">Delete Ticket</a> </div>
+                <div><a href="/user/ticket/{{ticket.id}}/pdf/" class="badge card shadow bg-success">
                     Download PDF
-                </a>
+                </a></div>
             </div>
             
             
