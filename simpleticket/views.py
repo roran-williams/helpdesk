@@ -78,7 +78,7 @@ def view(request, ticket_id=1):
 @admin_required
 def view_all(request):
     my_tickets = Ticket.objects.filter(created_by=request.user)
-
+    
     # Handle GET parameters
     assigned_filter = request.GET.get("assigned_to")
     created_filter = request.GET.get("created_by")
