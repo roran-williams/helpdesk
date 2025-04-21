@@ -52,6 +52,7 @@
                         {% endfor %}
                     </select>
                 </div> 
+                {% if allowed_to_assign_ticket %}
                 <div class="mb-3">
                     <label for="assigned">Assigned to</label>
                     <select  class="form-select" id="assigned"  name="assigned" selected="selected">
@@ -61,6 +62,18 @@
                         {% endfor %}
                     </select>
                 </div>
+                {% else %}
+                <div class="mb-3">
+                    <label for="assigned">Assigned to</label>
+                    <select  class="form-select" id="assigned"  name="assigned" selected="selected" hidden>
+                        <option value="unassigned">Unassigned</option>
+                        {% for member in tab_users %}
+                            <option value="{{ member.id }}">{{ member.username }}</option>
+                        {% endfor %}
+                    </select>
+                    <p class="form-control" >unassigned</p>
+                </div>
+                {% endif %}
                 
                 <div class="mb-3">
                     <label for="status" class="form-label">Status</label>

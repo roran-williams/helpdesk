@@ -1,0 +1,114 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fanan Limited | Cybersecurity Experts</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; background-color: #0a0a0a; color: #e0e0e0; }
+        header { background: #111; padding: 20px; text-align: center; border-bottom: 3px solid #007BFF; }
+        .logo { max-width: 150px; }
+        .container { max-width: 1100px; margin: auto; padding: 20px; }
+        section { padding: 40px 20px; text-align: center; background: #161616; margin: 20px 0; border-radius: 8px; box-shadow: 0 0 15px rgba(0, 123, 255, 0.2); }
+        .btn { display: inline-block; background: #007BFF; color: #fff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 18px; transition: 0.3s; }
+        .btn:hover { background: #0056b3; }
+        .services { display: flex; justify-content: space-between; flex-wrap: wrap; }
+        .service-box { 
+            width: 30%; 
+            padding: 20px; 
+            background: #222; 
+            color: #fff; 
+            border-radius: 8px; 
+            margin: 10px; 
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3); 
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease; 
+        }
+        .service-box:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 8px 20px rgba(0, 123, 255, 0.6); 
+            background: #1b1f2b; /* Dark blue-grey color */
+        }
+        .service-box:hover h3, .service-box:hover p { color: #e0e0e0; } /* Maintain readability */
+        .service-box:hover i { color: #007BFF; } /* Keep icons blue */
+        footer { background: #111; text-align: center; padding: 20px; margin-top: 20px; border-top: 3px solid #007BFF; }
+        ul { list-style-type: none; padding: 0; }
+        ul li { padding: 8px 0; font-size: 18px; }
+        .icon { font-size: 40px; color: #007BFF; margin-bottom: 15px; transition: 0.3s; }
+    </style>
+</head>
+<body>
+    <div class="container card shadow">
+    <header class="container card shadow">
+        <img src="{% static 'images/fanan_logo.jpg' %}" alt="Fanan Limited Logo" class="logo">
+        <h1>Fanan Limited</h1>
+        <p>Cybersecurity Solutions for a Safer Digital World</p>
+    </header>
+    
+    <div class="container">
+        <section>
+            <h2>🔐 About Us</h2>
+            <p>Fanan Limited is an ISO27001-certified cybersecurity firm dedicated to securing businesses with cutting-edge security solutions, penetration testing, and compliance management.</p>
+        </section>
+        
+        <section>
+            <h2>🛡️ Our Services</h2>
+            <div class="services">
+                <div class="service-box">
+                    <i class="fas fa-user-secret icon"></i>
+                    <h3>Penetration Testing</h3>
+                    <p>Simulated attacks to expose vulnerabilities before hackers do.</p>
+                </div>
+                <div class="service-box">
+                    <i class="fas fa-shield-alt icon"></i>
+                    <h3>Security Audits</h3>
+                    <p>In-depth evaluations to identify security gaps and risks.</p>
+                </div>
+                <div class="service-box">
+                    <i class="fas fa-lock icon"></i>
+                    <h3>Managed Security</h3>
+                    <p>24/7 threat monitoring and response for total security.</p>
+                </div>
+                <div class="service-box">
+                    <i class="fas fa-gavel icon"></i>
+                    <h3>Compliance & Risk</h3>
+                    <p>Ensuring alignment with security standards like ISO27001.</p>
+                </div>
+                <div class="service-box">
+                    <i class="fas fa-chalkboard-teacher icon"></i>
+                    <h3>Security Training</h3>
+                    <p>Cyber awareness programs for employees and businesses.</p>
+                </div>
+                <div class="service-box">
+                    <i class="fas fa-exclamation-triangle icon"></i>
+                    <h3>Incident Response</h3>
+                    <p>Rapid response teams to mitigate cyber threats in real-time.</p>
+                </div>
+            </div>
+        </section>
+        
+        <section>
+            <h2>💡 Why Choose Us?</h2>
+            <ul>
+                <li>✔️ ISO27001-certified cybersecurity professionals.</li>
+                <li>✔️ AI-powered security analysis & threat detection.</li>
+                <li>✔️ Trusted by global enterprises and government agencies.</li>
+                <li>✔️ Cutting-edge technology and customized security solutions.</li>
+            </ul>
+        </section>
+        
+        <section>
+            <h2>🆘 Need Help?</h2>
+            <p>Get immediate support from our cybersecurity experts.</p>
+            <a href="/" class="btn">Go to Help Desk</a>
+        </section>
+    </div>
+    
+    <footer>
+        <p>📧 Contact Us: <a href="mailto:info@fanansolutions.com" style="color:#f4f4f4;">info@fanansolutions.com</a> | 📞 +254 786 473640</p>
+        <p>&copy; 2025 Fanan Limited. All rights reserved.</p>
+    </footer>
+</body>
+</div>
+</html>

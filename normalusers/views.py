@@ -284,8 +284,6 @@ def submit_ticket(request):
     return HttpResponseRedirect("/user/view/" + str(ticket.id) + "/")
 
 
-
-
 @login_required
 def submit_comment(request, ticket_id):
     text = request.POST["comment-text"]
@@ -299,15 +297,15 @@ def submit_comment(request, ticket_id):
         if status != ticket.status:
             raise PermissionDenied("You do not have permission to change the ticket status.")
 
-    # Update status if necessary (only if permitted)
-    if status != ticket.status:
-        if text != "":
-            text += "\n\n"
-        else:
-            comment.automated = True
-        text += f"<strong>Automated Comment:</strong> Status changed from {ticket.status.name} to {status.name}"
-        ticket.status = status
-        ticket.save()
+    # # Update status if necessary (only if permitted)
+    # if status != ticket.status:
+    #     if text != "":
+    #         text += "\n\n"
+    #     else:
+    #         comment.automated = True
+    #     text += f"<strong>Automated Comment:</strong> Status changed from {ticket.status.name} to {status.name}"
+    #     ticket.status = status
+    #     ticket.save()
 
     # Create ticket comment
     comment = TicketComment(
@@ -320,11 +318,57 @@ def submit_comment(request, ticket_id):
     comment.save()
 
     if ticket.assigned_to and (ticket.assigned_to != comment.commenter):
-        message_preamble = f'A ticket you are assigned to has received a comment:\n{request.get_host()}/tickets/view/{ticket.id}/\n\n'
-        email_user(ticket.assigned_to, f"Ticket Comment: {ticket.name}", message_preamble + ticket.desc)
+        try:
+            email_user(to_email=ticket.assigned_to.email,subject="A ticket you are assigned to has received a comment",message=f"ticket '{ticket.name}' has received a comment, check it!!.")
+        except Exception:
+            messages.error(request, "email not sent, but coment is still saved.")
 
     messages.success(request, "The comment has been added.")
     return HttpResponseRedirect(f"/user/view/{ticket.id}/")
+
+
+# def submit_comment(request, ticket_id):
+#     text = request.POST["comment-text"]
+#     time_logged = float(request.POST["comment-time-logged"])
+#     status = Status.objects.get(pk=int(request.POST["comment-status"]))
+#     ticket = get_object_or_404(Ticket, pk=ticket_id)
+
+#     # Check if the user has permission to change the status
+#     if not request.user.has_perm('simpleticket.change_status'):
+#         # If the status is being changed, deny access
+#         if status != ticket.status:
+#             raise PermissionDenied("You do not have permission to change the ticket status.")
+
+
+#     # Update status if necessary (only if permitted)
+#     if status != ticket.status:
+#         if text != "":
+#             text += "\n\n"
+#         else:
+#             comment.automated = True
+#         text += f"<strong>Automated Comment:</strong> Status changed from {ticket.status.name} to {status.name}"
+#         ticket.status = status
+#         ticket.save()
+
+#     # Create ticket comment
+#     comment = TicketComment(
+#         commenter=request.user, 
+#         text=text, 
+#         ticket=ticket, 
+#         time_logged=time_logged, 
+#         update_time=datetime.now()
+#     )
+    
+#     comment.save()
+
+#     if ticket.assigned_to and (ticket.assigned_to != comment.commenter):
+#         try:
+#             email_user(to_email=ticket.assigned_to.email,subject="A ticket you are assigned to has received a comment",message=f"ticket '{ticket.name}' has received a comment, check it!!.")
+#         except Exception:
+#             messages.error(request, "email not sent, but coment is still saved.")
+
+#     messages.success(request, "The comment has been added.")
+#     return HttpResponseRedirect(f"/staff/view/{ticket.id}/")
 
 
 

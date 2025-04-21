@@ -31,8 +31,7 @@
         });
     </script>
 </head>
-<body class="bg-light">
-    
+<body class="bg-light">    
     <div class="container mt-3">
         <nav class="navbar mb-1 card navbar-expand-lg navbar-dark bg-primary p-4">
             <div class="container">
@@ -111,11 +110,17 @@
                         {% if sort == 'status' and order == 'dsc' %}<span style="font-size: 8pt;">&#x25B2;</span>{% endif %}
                         {% if sort == 'status' and order == 'asc' %}<span style="font-size: 8pt;">&#x25BC;</span>{% endif %}
                     </a></td>
+                    <td><a href="{{ base_url }}&show_closed={{ show_closed }}&sort=created_by{% if sort != 'created_by' or order == 'dsc' %}&order=asc{% else %}&order=dsc{% endif %}">
+                        Created_by
+                        {% if sort == 'created_by' and order == 'dsc' %}<span style="font-size: 8pt;">&#x25B2;</span>{% endif %}
+                        {% if sort == 'created_by' and order == 'asc' %}<span style="font-size: 8pt;">&#x25BC;</span>{% endif %}
+                    </a></td>
                     <td><a href="{{ base_url }}&show_closed={{ show_closed }}&sort=assigned{% if sort != 'assigned' or order == 'dsc' %}&order=asc{% else %}&order=dsc{% endif %}">
                         Assigned
                         {% if sort == 'assigned' and order == 'dsc' %}<span style="font-size: 8pt;">&#x25B2;</span>{% endif %}
                         {% if sort == 'assigned' and order == 'asc' %}<span style="font-size: 8pt;">&#x25BC;</span>{% endif %}
                     </a></td>
+_by
                     <td><a href="{{ base_url }}&show_closed={{ show_closed }}&sort=updated{% if sort != 'updated' or order == 'dsc' %}&order=asc{% else %}&order=dsc{% endif %}">
                         Updated
                         {% if sort == 'updated' and order == 'dsc' %}<span style="font-size: 8pt;">&#x25B2;</span>{% endif %}
@@ -135,7 +140,8 @@
                             </a>
                         </span>
                     </td>
-                        <td><a class="badge bg-black"  href="/staff/?status={{ ticket.status.id }}" style="color:rgb(1, 255, 1)">{{ ticket.status }}</a></td>
+                    <td><a class="badge bg-black"  href="/staff/?status={{ ticket.status.id }}" style="color:rgb(1, 255, 1)">{{ ticket.status }}</a></td>
+                    <td><a class="badge bg-black"  href="/staff/?created_by={{ ticket.created_by.id }}" style="color:rgb(253, 245, 1)">{{ ticket.created_by }}</a></td>
                         {% if ticket.assigned_to %}
                             <td><a class="badge bg-black" style="color:rgb(4, 254, 4)" href="/staff/?assigned_to={{ ticket.assigned_to.id }}">{{ ticket.assigned_to }}</a></td>
                         {% else %}

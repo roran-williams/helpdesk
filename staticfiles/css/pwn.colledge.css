@@ -1,0 +1,72 @@
+/* Cyberpunk Hacker Theme */
+
+body {
+    background-color: #0d0d0d;
+    color: #00ff99;
+    font-family: 'Courier New', monospace;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: auto;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    box-shadow: 0 0 10px #00ff99;
+    border-radius: 5px;
+}
+
+h1, h2, h3 {
+    color: #00ccff;
+    text-shadow: 0 0 5px #00ccff;
+}
+
+button, .btn {
+    background: #111;
+    color: #00ff99;
+    border: 2px solid #00ff99;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+button:hover, .btn:hover {
+    background: #00ff99;
+    color: #000;
+    box-shadow: 0 0 10px #00ff99;
+}
+
+input, select {
+    background: #111;
+    border: 2px solid #00ff99;
+    color: #00ff99;
+    padding: 8px;
+    font-size: 16px;
+}
+
+.card {
+    background: #111;
+    padding: 15px;
+    border: 2px solid #00ccff;
+    box-shadow: 0 0 5px #00ccff;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+a {
+    color: #00ccff;
+    text-decoration: none;
+}
+
+a:hover {
+    text-shadow: 0 0 5px #00ccff;
+}
+
+@media screen and (max-width: 768px) {
+    .container {
+        width: 100%;
+    }
+}

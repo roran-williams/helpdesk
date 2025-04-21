@@ -117,10 +117,10 @@
                     {{ ticket.priority.name }}
                 </span>
             </p>
-            <p><strong>Time Allocated: </strong><span class="badge bg-black"> {{ ticket.time_logged }} HRS</span></p>
-            <p><strong>Created By: </strong><span class="badge bg-black"> {{ ticket.created_by.username }}</span></p>
+            <p><strong>Time Logged: </strong><span class="badge bg-black"> {{ ticket.time_logged }} HRS</span></p>
+            <p><strong>Created By: </strong><a href="{% url 'view_profile' ticket.created_by.username %}"><span class="badge bg-black"> {{ ticket.created_by.username }}</span></a></p>
             {% if ticket.assigned_to %}
-            <p><strong>Assigned To: </strong><span class="badge bg-black"> {{ ticket.assigned_to.username }}</span></p>
+            <p><strong>Assigned To: </strong><a href="{% url 'view_profile' ticket.assigned_to.username %}"><span class="badge bg-black"> {{ ticket.assigned_to.username }}</span></a></p>
             {% else %}
             <p><strong>Assigned To: </strong><span class="badge bg-black"> Unassigned</span></p>
             {% endif %}
@@ -169,14 +169,18 @@
                             <textarea id="comment-text" name="comment-text" class="form-control"></textarea>
                         </div>
                         <div class="col-md-3">
-                            {% if ticket.status.name == 'closed' %}
+                            {% if user.is_staff %}
                             <div class="form-group">
-                                <label for="comment-time-logged" style="width: 100%;">Rate how the issue was addressed</label>
+                                <label for="comment-time-logged" style="width: 100%;">Time Logged</label>
                                 <input id="comment-time-logged" name="comment-time-logged" class="form-control" type="number" value="0" step="0" max="10" min="0"/>
                             </div>
                             {% else %}
-                            <input id="comment-time-logged" name="comment-time-logged" class="form-control" type="number" value="0" step="0" max="10" min="0" hidden/>
-                            rate us when issue closses
+                            <div class="form-group">
+                                <label for="comment-time-logged" style="width: 100%;">Time Logged</label>
+                                <input id="comment-time-logged" name="comment-time-logged" class="form-control" type="number" value="0" step="0" max="10" min="0" hidden/>
+                                <p class="form-control">{{ticket.time_logged}}</p>
+                            </div>
+                            
                             {% endif %}
                             <div class="form-group" hidden>
                                 <label for="comment-status">Status</label>

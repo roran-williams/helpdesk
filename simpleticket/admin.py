@@ -1,6 +1,11 @@
-from simpleticket.models import Project, Priority, Status, Ticket, TicketComment
+from simpleticket.models import Profile, Project, Priority, Status, Ticket, TicketComment
 from django.contrib import admin
 
+@admin.register(Profile)
+class ProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'organization', 'contact_number', 'created_at')
+    search_fields = ('user__username', 'organization', 'contact_number')
+    list_filter = ( 'created_at','organization')
 
 class TicketCommentInLine(admin.TabularInline):
     model = TicketComment

@@ -136,3 +136,8 @@ STATICFILES_DIRS = [
 
 # Directory for collected static files
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Use for collectstatic
+
+# MEDIA FILES (User-uploaded files)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+

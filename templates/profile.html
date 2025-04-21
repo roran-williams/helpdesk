@@ -1,0 +1,42 @@
+{% extends 'staff/base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow p-4">
+        <h3 class="text-center">{{ profile.user.username }}'s Profile</h3>
+
+        <div class="text-center">
+            <img src="{{ profile.profile_picture.url }}" class="rounded-circle" width="150">
+            <h4>{{ profile.user.first_name }} {{ profile.user.last_name }}</h4>
+            <p><strong>Email:</strong> {{ profile.user.email }}</p>
+            <p><strong>Account Type:</strong> {{ profile.get_role}}</p>
+            <p><strong>Organization:</strong> {{ profile.organization }}</p>
+            <p><strong>Address:</strong> {{ profile.address }}</p>
+            <p><strong>Phone:</strong> {{ profile.contact_number }}</p>
+            <p><strong>Position:</strong> {{ profile.position }}</p>
+            <p><strong>Department:</strong> {{ profile.department }}</p>
+            {% if profile.get_role != 'Client' %}
+            <p><strong>Tickets Created:</strong> {{ created_tickets }}</p>
+            <p><strong>Tickets Assigned:</strong> {{ assigned_tickets }}</p>
+            <p><strong>Tickets Resolved:</strong> {{ resolved_tickets }}</p>
+            {%endif%}
+            <p><strong>Joined On:</strong> {{ profile.user.date_joined }}</p>
+            <p><strong>Last Login:</strong> {{ profile.user.last_login }}</p>
+            <!-- <p><strong>Status:</strong> {{ profile.account_status }}</p> -->
+            <p><strong>Bio:</strong> {{ profile.bio }}</p>
+            
+            <p><strong>Social Media:</strong></p>
+            {% for key, value in profile.social_media_links.items %}
+                <a href="{{ value }}" target="_blank">{{ key|title }}</a><br>
+            {% endfor %}
+
+            {% if request.user == profile.user %}
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary w-100">Update Profile</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

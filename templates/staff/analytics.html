@@ -1,6 +1,22 @@
+{% load static %}
+{% block title %}Helpdesk Analytics{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{% static 'css/analytics.css' %}">
+{% endblock %}
+{% block scripts %}
+<script type="text/javascript">
+function downloadPDF() {
+    window.print();  // This will open the browser print dialog, allowing the user to save as PDF.
+}
+</script>
+
+{% endblock %}
+
 {% block content %}
 
 <h2>📊 Helpdesk Analytics (Live)</h2>
+<button onclick="downloadPDF()" class="download-button">📄 Grab This Page</button>
+<p><a href="{% url 'download_csv_report' %}" class="btn btn-primary">Download CSV Data</a></p>
 
 <!-- 🎟️ Ticket Status Pie Chart -->
 <h3>Ticket Status Distribution</h3>
@@ -13,7 +29,65 @@
 <!-- 🎯 Agent Performance -->
 <h3>Agent Performance</h3>
 <canvas id="agentPerformanceChart"></canvas>
-<p><a href="{% url 'download_csv_report' %}" class="btn btn-primary">Download CSV Report</a></p>
+<p>ticket_summary_report</p>
+<form method="get" action="{% url 'generate_ticket_summary_report' %}">
+    <label for="start_date">Start Date:</label>
+    <input type="date" id="start_date" name="start_date">
+
+    <label for="end_date">End Date:</label>
+    <input type="date" id="end_date" name="end_date">
+
+    <label for="status">Status:</label>
+    <select name="status">
+        <option value="">All</option>
+        <option value="open">Open</option>
+        <option value="closed">Closed</option>
+    </select>
+
+    <label for="priority">Priority:</label>
+    <select name="priority">
+        <option value="">All</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+    </select>
+
+    <button type="submit">Generate Report</button>
+</form>
+<p>ticket_assignment</p>
+<form action="{% url 'generate_ticket_assignment_report' %}" method="get">
+    <label for="start_date">Start Date:</label>
+    <input type="date" id="start_date" name="start_date" required>
+    
+    <label for="end_date">End Date:</label>
+    <input type="date" id="end_date" name="end_date" required>
+    
+    <button type="submit">Generate Report</button>
+</form>
+<p>agent_performance</p>
+<form action="{% url 'generate_agent_performance_report' %}" method="get">
+    <label for="start_date">Start Date:</label>
+    <input type="date" id="start_date" name="start_date" required>
+    
+    <label for="end_date">End Date:</label>
+    <input type="date" id="end_date" name="end_date" required>
+    
+    <button type="submit">Generate Report</button>
+</form>
+
+<p>status_report</p>
+<form action="{% url 'generate_ticket_status_report' %}" method="get">
+    <label for="start_date">Start Date:</label>
+    <input type="date" id="start_date" name="start_date" required>
+    
+    <label for="end_date">End Date:</label>
+    <input type="date" id="end_date" name="end_date" required>
+    
+    <button type="submit">Generate Report</button>
+</form>
+
+
+
 <!-- 🔄 AJAX Script -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>

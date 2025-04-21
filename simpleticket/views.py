@@ -2,7 +2,7 @@ from datetime import datetime
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 from django.contrib.auth.models import User
-from simpleticket.models import Priority, Status, Project, Ticket, TicketComment
+from simpleticket.models import Profile, Priority, Status, Project, Ticket, TicketComment
 from django.shortcuts import get_object_or_404
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.contrib import messages
@@ -12,7 +12,7 @@ from simpleticket.utils import email_user
 from django.core.exceptions import PermissionDenied
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.decorators import login_required
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, A4
 from reportlab.pdfgen import canvas
 from django.http import HttpResponse
 import os
@@ -59,7 +59,8 @@ def create(request):
 def view(request, ticket_id=1):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
     status_list = Status.objects.all()
-
+    profile = Profile.objects.filter(user=ticket.created_by)
+    
     # Paginate Ticket_Comments
     ticket_comments = ticket.ticketcomment_set.order_by('-id')
     paginator = Paginator(ticket_comments, 10)
@@ -72,12 +73,68 @@ def view(request, ticket_id=1):
     except (EmptyPage, InvalidPage):
         ticket_comments = paginator.page(paginator.num_pages)
 
-    return render(request, 'staff/view.html', {'ticket': ticket, 'status_list': status_list, 'ticket_comments': ticket_comments})
+    return render(request, 'staff/view.html', {'profile':profile,'ticket': ticket, 'status_list': status_list, 'ticket_comments': ticket_comments})
+
+
+def view_profile(request,ticket_id=1):
+    ticket = get_object_or_404(Ticket, pk=ticket_id)
+    profile = Profile.objects.filter(user=ticket.created_by)
+    assigned_profile = Profile.objects.filter(user=ticket.assigned_to)
+    
+    for i in assigned_profile:
+        afirst_name = i.user.first_name
+        alast_name = i.user.last_name
+        aemail = i.user.email
+        ausername = i.user.username
+        aaddress = i.address
+        acontact = i.contact_number
+        aorganization = i.organization
+        adate = i.created_at
+        aimage = i.get_profile_picture()
+        arole = i.role
+
+    for i in profile:
+        first_name = i.user.first_name
+        last_name = i.user.last_name
+        email = i.user.email
+        username = i.user.username
+        address = i.address
+        contact = i.contact_number
+        organization = i.organization
+        date = i.created_at
+        image = i.get_profile_picture()
+        role = i.role
+  
+    return render(request, "staff/profile.html", {
+        'profile':profile,
+        "address":address,
+        'organization':organization,
+        'email':email,
+        'username':username,
+        'first_name':first_name,
+        'last_name':last_name,
+        'contact':contact,
+        'date':date,
+        'image':image,
+        'role':role,
+        "aaddress":aaddress,
+        'aorganization':aorganization,
+        'aemail':aemail,
+        'ausername':ausername,
+        'afirst_name':afirst_name,
+        'alast_name':alast_name,
+        'acontact':acontact,
+        'adate':adate,
+        'aimage':aimage,
+        'arole':arole
+         })
+
 
 @login_required
 @admin_required
 def view_all(request):
     my_tickets = Ticket.objects.filter(created_by=request.user)
+    allowed_to_change_ticket_status = request.user.has_perm('simpleticket.change_status')
     
     # Handle GET parameters
     assigned_filter = request.GET.get("assigned_to")
@@ -208,11 +265,16 @@ def view_all(request):
     get_params = '&'.join(pairs)
     prev_link = request.path + '?' + get_params
 
-    return render(request, 'staff/view_all.html', {'tickets': tickets,'my_tickets':my_tickets, 'filter': filter,
-                                                          'filter_message': filter_message, 'base_url': base_url,
-                                                          'next_link': next_link, 'prev_link': prev_link,
-                                                          'sort': sort_setting, 'order': order_setting,
-                                                          'show_closed': show_closed})
+    return render(request, 'staff/view_all.html', {
+        'tickets': tickets,
+        'my_tickets':my_tickets,
+          'filter': filter,
+          'allowed_to_change_ticket_status':allowed_to_change_ticket_status,
+            'filter_message': filter_message, 'base_url': base_url,
+            'next_link': next_link, 'prev_link': prev_link,
+            'sort': sort_setting, 'order': order_setting,
+            'show_closed': show_closed,
+            })
 @login_required
 def view_my_tickets(request):
     user_tickets = Ticket.objects.filter(created_by=request.user)
@@ -405,6 +467,7 @@ def submit_comment(request, ticket_id):
         if status != ticket.status:
             raise PermissionDenied("You do not have permission to change the ticket status.")
 
+
     # Update status if necessary (only if permitted)
     if status != ticket.status:
         if text != "":
@@ -526,8 +589,8 @@ def update_ticket(request, ticket_id):
 @admin_required
 def delete_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
-
-    if not (request.user.has_perm('simpleticket.delete_ticket') or request.user.is_superuser):
+    created_ticket = ticket.created_by == request.user
+    if not (request.user.has_perm('simpleticket.delete_ticket') or request.user.is_superuser or created_ticket):
         raise PermissionDenied("You do not have permission to delete this ticket.")
 
     TicketComment.objects.filter(ticket=ticket).delete()
@@ -662,7 +725,7 @@ def get_ticket_data(request):
 
     # 🎯 Agent Performance
     agent_performance = (
-        Ticket.objects.filter(status__name="closed")
+        Ticket.objects.filter(status__name="Closed")
         .values('assigned_to__username')
         .annotate(resolved_tickets=Count('id'))
         .order_by('-resolved_tickets')
@@ -700,3 +763,317 @@ def download_csv_report(request):
         writer.writerow([status['status__name'], status['count']])
 
     return response
+
+
+
+
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import A4
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle
+from datetime import datetime
+from .models import Ticket  # Assuming your Ticket model exists
+
+
+def generate_ticket_summary_report(request):
+    # Fetch filters from request
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+    status = request.GET.get("status")
+    priority = request.GET.get("priority")
+    
+    # Filter tickets based on user input
+    tickets = Ticket.objects.all()
+    if start_date and end_date:
+        tickets = tickets.filter(creation_time__range=[start_date, end_date])
+    if status:
+        tickets = tickets.filter(status__name=status)
+    if priority:
+        tickets = tickets.filter(priority__name=priority)
+    
+    # Create HTTP response with PDF content
+    response = HttpResponse(content_type='application/pdf')
+    filename = f"Ticket_Report_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Create PDF canvas
+    p = canvas.Canvas(response, pagesize=A4)
+    width, height = A4
+    
+    # Add logo (Assuming logo is stored in static files)
+    logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'fanan_logo.jpg')
+    # logo_path = "static/images/fanan_logo.png"  # Adjust path as needed
+    p.drawImage(logo_path, 40, height - 80, width=100, height=50)
+    
+    # Add Title
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(150, height - 60, "Ticket Summary Report")
+    p.setFont("Helvetica", 10)
+    p.drawString(150, height - 75, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Table Data
+    data = [["Ticket ID", "Subject", "Status", "Priority", "Agent","Client"]]
+    for ticket in tickets:
+        data.append([ticket.id, ticket.name, ticket.status, ticket.priority, ticket.assigned_to.username if ticket.assigned_to else "Unassigned", ticket.created_by.username])
+    
+    # Create Table
+    table = Table(data, colWidths=[70, 200, 80, 80, 100,80])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    
+    # Draw Table
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 0, height - 200)
+    
+    # Save PDF
+    p.showPage()
+    p.save()
+    return response
+
+
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from django.http import HttpResponse
+from datetime import datetime
+from .models import Ticket
+
+def generate_ticket_assignment_report(request):
+    # Fetch filters from request
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+    
+    # Filter tickets based on date range
+    tickets = Ticket.objects.all()
+    if start_date and end_date:
+        tickets = tickets.filter(creation_time__range=[start_date, end_date])
+    
+    # Create a dictionary to store ticket counts for each agent
+    agent_report = {}
+    for ticket in tickets:
+        agent = ticket.assigned_to.username if ticket.assigned_to else "Unassigned"
+        if agent not in agent_report:
+            agent_report[agent] = {"open": 0, "closed": 0, "pending": 0}
+        
+        # Count ticket statuses
+        if ticket.status == "open":
+            agent_report[agent]["open"] += 1
+        elif ticket.status == "closed":
+            agent_report[agent]["closed"] += 1
+        elif ticket.status == "pending":
+            agent_report[agent]["pending"] += 1
+
+    # Create HTTP response with PDF content
+    response = HttpResponse(content_type='application/pdf')
+    filename = f"Ticket_Assignment_Report_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Create PDF canvas
+    p = canvas.Canvas(response, pagesize=A4)
+    width, height = A4
+    
+    # Add logo (Assuming logo is stored in static files)
+    logo_path = os.path.join(settings.BASE_DIR, 'static', 'images', 'fanan_logo.jpg')
+    # logo_path = "static/images/fanan_logo.jpg"  # Adjust path as needed
+    p.drawImage(logo_path, 40, height - 80, width=100, height=50)
+    
+    # Add Title
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(150, height - 60, "Ticket Assignment Report")
+    p.setFont("Helvetica", 10)
+    p.drawString(150, height - 75, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Table Data
+    data = [["Agent", "Open Tickets", "Closed Tickets", "Pending Tickets"]]
+    for agent, status_counts in agent_report.items():
+        data.append([agent, status_counts["open"], status_counts["closed"], status_counts["pending"]])
+    
+    # Create Table
+    table = Table(data, colWidths=[150, 100, 100, 100])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    
+    # Draw Table
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 40, height - 200)
+    
+    # Save PDF
+    p.showPage()
+    p.save()
+    return response
+
+
+from django.http import HttpResponse
+from datetime import datetime
+from django.db.models import Q
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.pdfgen import canvas
+from .models import Ticket, User
+
+def generate_agent_performance_report(request):
+    # Get filter values
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+
+    # Get all tickets within the date range
+    tickets = Ticket.objects.all()
+    if start_date and end_date:
+        tickets = tickets.filter(creation_time__range=[start_date, end_date])        
+    # Group tickets per agent
+    agent_stats = {}
+    
+    for ticket in tickets:
+        agent_id = ticket.assigned_to_id if ticket.assigned_to else 'Unassigned'
+        if agent_id not in agent_stats:
+            agent_stats[agent_id] = {
+                "assigned": 0,
+                "resolved": 0,
+                "total_resolution_time": 0
+            }
+        
+        # Count all assigned tickets
+        agent_stats[agent_id]["assigned"] += 1  
+
+        # Count only resolved or closed tickets
+        if ticket.status.name in ["Closed", "Resolved"]:  
+            agent_stats[agent_id]["resolved"] += 1
+            resolution_time = (ticket.update_time - ticket.creation_time).total_seconds()
+            agent_stats[agent_id]["total_resolution_time"] += resolution_time
+
+    # Create PDF response
+    response = HttpResponse(content_type='application/pdf')
+    filename = f"Agent_Performance_Report_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    p = canvas.Canvas(response, pagesize=A4)
+    width, height = A4
+
+    # Add logo
+    logo_path = "static/images/fanan_logo.jpg"
+    p.drawImage(logo_path, 40, height - 80, width=100, height=50)
+
+    # Title & Timestamp
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(150, height - 60, "Agent Performance Report")
+    p.setFont("Helvetica", 10)
+    p.drawString(150, height - 75, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    # Table Data
+    data = [["Agent", "Tickets Assigned", "Tickets Resolved", "Avg Resolution Time (hrs)"]]
+
+    for agent_id, stats in agent_stats.items():
+        agent = User.objects.filter(id=agent_id).first() if agent_id != "Unassigned" else "Unassigned"
+        avg_resolution_time = (
+            stats["total_resolution_time"] / stats["resolved"] / 3600 if stats["resolved"] > 0 else 0
+        )  # Convert to hours
+        if agent != "Unassigned":
+            data.append([agent.username, stats["assigned"], stats["resolved"], round(avg_resolution_time, 2)])
+        else:
+            continue
+    # Create table
+    table = Table(data, colWidths=[150, 150, 150, 150])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+
+    # Draw table
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 40, height - 200)
+
+    # Save PDF
+    p.showPage()
+    p.save()
+    return response
+
+
+    
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from django.http import HttpResponse
+from datetime import datetime
+from .models import Ticket
+
+def generate_ticket_status_report(request):
+    # Get the filter values from the request
+    start_date = request.GET.get("start_date")
+    end_date = request.GET.get("end_date")
+    
+    # Filter tickets based on date range
+    tickets = Ticket.objects.all()
+    if start_date and end_date:
+        tickets = tickets.filter(creation_time__range=[start_date, end_date])
+    
+    # Count tickets by status
+    status_report = {"open": 0, "closed": 0, "pending": 0}
+    for ticket in tickets:
+        if ticket.status == "Submitted":
+            status_report["open"] += 1
+        elif ticket.status.name == "Closed":
+            status_report["closed"] += 1
+        elif ticket.status == "In Progress":
+            status_report["pending"] += 1
+    
+    # Create HTTP response with PDF content
+    response = HttpResponse(content_type='application/pdf')
+    filename = f"Ticket_Status_Report_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    # Create the PDF canvas
+    p = canvas.Canvas(response, pagesize=A4)
+    width, height = A4
+    
+    # Add the logo (adjust the path to your logo image)
+    logo_path = "static/images/fanan_logo.jpg"
+    p.drawImage(logo_path, 40, height - 80, width=100, height=50)
+    
+    # Title and timestamp
+    p.setFont("Helvetica-Bold", 16)
+    p.drawString(150, height - 60, "Ticket Status Overview Report")
+    p.setFont("Helvetica", 10)
+    p.drawString(150, height - 75, f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    # Table Data
+    data = [["Status", "Ticket Count"]]
+    for status, count in status_report.items():
+        data.append([status.capitalize(), count])
+    
+    # Create the Table
+    table = Table(data, colWidths=[150, 100])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 10),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+    ]))
+    
+    # Draw the table on the PDF
+    table.wrapOn(p, width, height)
+    table.drawOn(p, 40, height - 200)
+    
+    # Save PDF
+    p.showPage()
+    p.save()
+    return response
+

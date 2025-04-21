@@ -3,6 +3,38 @@ from django.conf import settings
 from django.db.models import Sum
 from django.contrib.auth.models import User
 
+class Profile(models.Model):
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    profile_picture = models.ImageField(upload_to='profile_pics/', default='default_profile.png')
+    
+    # Basic Information
+    organization = models.CharField(max_length=255, blank=True, null=True)
+    address = models.CharField(blank=True, null=True, max_length=100)
+    contact_number = models.CharField(max_length=15, blank=True, null=True)
+    
+    # Professional Details
+    position = models.CharField(max_length=100, blank=True, null=True)
+    department = models.CharField(max_length=100, blank=True, null=True)
+    tickets_created = models.IntegerField(default=0)
+    tickets_handled = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)  # Adds the created_at field
+    # # Activity & Status
+    # account_status = models.CharField(max_length=20, choices=[('Active', 'Active'), ('Suspended', 'Suspended'), ('Deactivated', 'Deactivated')], default='Active')
+    
+    # Optional Personalization
+    bio = models.TextField(blank=True, null=True)
+    social_media_links = models.JSONField(default=dict, blank=True, null=True)  # Example: {"linkedin": "https://linkedin.com/in/user", "twitter": "https://twitter.com/user"}
+    def get_role(self):
+        """Dynamically determine role based on group membership."""
+        if self.user.is_superuser:
+            return "Administrator"
+        elif self.user.groups.filter(name="Staff").exists():
+            return "Staff"
+        else:
+            return "Client"
+    def __str__(self):
+        return f"{self.user.username} Profile"
 
 class Project(models.Model):
     name = models.CharField(max_length=32)
@@ -46,7 +78,6 @@ class Status(models.Model):
     def __str__(self):
         return self.name
 
-
 class Ticket(models.Model):
     project = models.ForeignKey(Project, null=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=28)
@@ -66,7 +97,7 @@ class Ticket(models.Model):
 
     time_logged = models.FloatField(default=0)
 
-    def __star__(self):
+    def __str__(self):
         return f"{self.name} (Project: {self.project}, Priority: {self.priority}, Assigned: {self.assigned_to})"
 
     class Meta:

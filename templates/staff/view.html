@@ -1,6 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+
+
+{% block head %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket Details - Fanan Limited Helpdesk</title>
@@ -70,10 +70,30 @@
         return confirm("Are you sure you want to delete this comment?");
     }
     </script>
-</head>
+{% endblock %}
+
+{% block content %}
 <body class="bg-light">
     
-    <div class="container mt-5">
+    <div class="container mt-3">
+        <nav class="navbar mb-1 card navbar-expand-lg navbar-dark bg-primary p-4">
+            <div class="container">
+                <a class="navbar-brand" href="/">Fanan Helpdesk</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/staff/">Tickets</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/staff/new/">New Ticket</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/knowledge_base">Knowledge Base</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/profile">Profile</a></li>
+                        <li class="nav-item"><a onclick="return confirm('Are you sure you want to logout?');" class="nav-link btn btn-danger text-white px-3" href="/logout">Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
         
         <div class="card shadow p-4">
             {% if messages %}
@@ -104,9 +124,12 @@
                 </span>
             </p>
             <p><strong>Time Allocated: </strong><span class="badge bg-black"> {{ ticket.time_logged }} HRS</span></p>
-            <p><strong>Created By: </strong><span class="badge bg-black"> {{ ticket.created_by.username }}</span></p>
+            <p><strong>Created By: </strong><span class="badge bg-black"> 
+                <a href="{% url 'view_profile' ticket.created_by.username %}">{{ ticket.created_by.username }}</a>
+            </span></p>
             {% if ticket.assigned_to %}
-            <p><strong>Assigned To: </strong><span class="badge bg-black"> {{ ticket.assigned_to.username }}</span></p>
+            <p><strong>Assigned To: </strong><span class="badge bg-black"> 
+                <a href="{% url 'view_profile' ticket.assigned_to.username %}">{{ ticket.assigned_to.username }}</a></span></p>
             {% else %}
             <p><strong>Assigned To: </strong><span class="badge bg-black"> Unassigned</span></p>
             {% endif %}
@@ -159,6 +182,7 @@
                                 <label for="comment-time-logged" style="width: 100%;">Time Logged (Hours)</label>
                                 <input id="comment-time-logged" name="comment-time-logged" class="form-control" type="number" value="0" step="0.1" />
                             </div>
+                            {% if allowed_to_change_status %}
                             <div class="form-group">
                                 <label for="comment-status">Status</label>
                                 <select id="comment-status" name="comment-status" class="form-control">
@@ -167,6 +191,17 @@
                                     {% endfor %}
                                 </select>
                             </div>
+                            {% else %}
+                            <div class="form-group">
+                                <label for="comment-status">Status</label>
+                                <select id="comment-status" name="comment-status" class="form-control" hidden>
+                                    {% for status in status_list %}
+                                        <option value="{{ status.id }}" {% if status == ticket.status %}selected="selected"{% endif %}>{{ status.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <p class="form-control">{{ ticket.status.name }}</p>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                     <input id="submit-comment" type="submit" class="btn btn-primary btn-lg" value="Comment" />
@@ -177,4 +212,5 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-</html>
+{% endblock %}
+
