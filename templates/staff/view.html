@@ -1,110 +1,17 @@
-
+{% extends "staff/base.html" %}
 
 {% block head %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ticket Details - Fanan Limited Helpdesk</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style type="text/css">
-        #description {
-            font-size: 12pt;
-            position: relative;
-            left: -6px;
-        }
-        .ticket-comment {
-            min-height: 90px;
-            padding: 5px;
-        }
-        .comment-info {
-            font-size: 10pt;
-            border-style: dashed;
-            border-color: gray;
-            border-width: 1px;
-            padding: 5px;
-        }
-        .content label {
-            width: 150px;
-        }
-        #comment-text {
-            min-height: 100px;
-        }
-        select {
-            width: 100px;
-        }
-        .delete-comment {
-            float:right;
-            margin-right: 5px;
-            font-weight: bold;
-        }
-        .pagination {
-            float:right;
-            margin: 0px;
-            padding: 0px;
-        }
-        #create-ticket-div {
-            text-align: right;
-        }
-        .ticket-comment label {
-            width: 88px;
-        }
-        .even {
-            background-color: #EEEEEE;
-        }
-    </style>
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $('#comment-text').ckeditor({
-                toolbarGroups: [
-                    { name: 'document',	   groups: [ 'mode', 'document' ] },
-                    { name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
-                    { name: 'links' },
-                    { name: 'styles' },
-                    { name: 'colors' },
-                    { name: 'paragraph',   groups: [ 'list', 'indent', 'blocks', 'align', 'bidi' ] }
-                ],
-                contentsCss: [CKEDITOR.basePath + 'contents.css', 'https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css']
-            });
-        });
-
-    function deleteComment(id) {
-        return confirm("Are you sure you want to delete this comment?");
-    }
-    </script>
+  
 {% endblock %}
 
-{% block content %}
-<body class="bg-light">
-    
+{% block content %}    
     <div class="container mt-3">
-        <nav class="navbar mb-1 card navbar-expand-lg navbar-dark bg-primary p-4">
-            <div class="container">
-                <a class="navbar-brand" href="/">Fanan Helpdesk</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/staff/">Tickets</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/staff/new/">New Ticket</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/knowledge_base">Knowledge Base</a></li>
-                        <li class="nav-item"><a class="nav-link" href="/profile">Profile</a></li>
-                        <li class="nav-item"><a onclick="return confirm('Are you sure you want to logout?');" class="nav-link btn btn-danger text-white px-3" href="/logout">Logout</a></li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-        
         <div class="card shadow p-4">
-            {% if messages %}
-                {% for message in messages %}
-                    {% if message.tags == 'error' %}
-                        <div class="alert card shadow badge alert-danger">{{ message }}</div>
-                    {% else %}
-                        <div {% if message.tags %}class=" card shadow badge alert alert-{{ message.tags }}"{% endif %}>{{ message }}</div>
-                    {% endif %}
-                {% endfor %}
-            {% endif %}
+            
             <div style="text-align: right;">
                 <div><a style="color: black;" class="badge card shadow bg-warning" href="/staff/update/{{ ticket.id }}/">Update Ticket</a></div>
                 <div><a style="color: black;" class="badge card shadow bg-danger" onclick="return confirm('Are you sure you want to delete this ticket?');" href="/staff/delete/{{ ticket.id }}/">Delete Ticket</a> </div>
@@ -160,7 +67,7 @@
             <div class="col-md-9 comment-text">{{ comment.text|safe|linebreaksbr }}</div>
             <div class=" col-md-3 comment-info">
                 {% if user == comment.commenter %}
-                    <div class="delete-comment" title="Delete Comment"><a href="/staff/delete_comment/{{ comment.id }}/" onclick="JavaScript:return deleteComment({{ comment.id }});"> &#215;</a></div>
+                    <div class="delete-comment" title="Delete Comment"><a href="/staff/delete_comment/{{ comment.id }}/" onclick="return confirm('Are you sure you want to delete this comment?')"> &#215;</a></div>
                 {% endif %}
                 <div class="commenter"><label>User</label><a href="/staff/?created_by=1">{{ comment.commenter.username }}</a></div>
                 <div class="update-time"><label>Updated</label>{{ comment.update_time|date:"H:i, d/m/y" }}</div>
@@ -210,7 +117,5 @@
             <a href="/" class="btn btn-secondary mt-3">Back to Tickets</a>
         </div>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
 {% endblock %}
 

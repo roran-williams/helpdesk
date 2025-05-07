@@ -408,8 +408,6 @@ def update(request, ticket_id):
         'you_created_ticket':you_created_ticket,
         })
 
-
-
 @login_required
 @ticket_creator_permission_required
 def update_ticket(request, ticket_id):
@@ -447,7 +445,7 @@ def update_ticket(request, ticket_id):
 def delete_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
     if ticket.created_by != request.user:
-        raise PermissionDenied("You do not have permission to delete this ticket.")
+         raise PermissionDenied("You do not have permission to delete this ticket.")
     TicketComment.objects.filter(ticket=ticket).delete()
     ticket.delete()
     messages.success(request, "The ticket has been deleted.")

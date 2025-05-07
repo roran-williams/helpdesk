@@ -3,6 +3,7 @@ from . import views
 from .views import get_ticket_data,analytics
 
 
+
 urlpatterns = [
     path('staff/generate-ticket-status-report/', views.generate_ticket_status_report, name='generate_ticket_status_report'),
     path('generate-agent-performance-report/', views.generate_agent_performance_report, name='generate_agent_performance_report'),

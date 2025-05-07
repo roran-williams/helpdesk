@@ -23,6 +23,19 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
 
+from django.http import HttpResponse
+from datetime import datetime
+from django.db.models import Q
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.pdfgen import canvas
+from .models import Ticket, User
+import csv
+from django.http import HttpResponse
+
+
+
 try:
     from urllib.parse import urlencode
 except ImportError:
@@ -700,11 +713,6 @@ def generate_ticket_pdf(request, ticket_id):
     return response
 
 
-from django.http import JsonResponse
-from django.db.models import Count, Avg
-from django.utils.timezone import now, timedelta
-from django.db.models.functions import TruncDate
-from .models import Ticket
 
 @admin_required
 def get_ticket_data(request):
@@ -743,12 +751,12 @@ def get_ticket_data(request):
     
     return JsonResponse(data)
 
+#reports
+
 @admin_required
 def analytics(request):
     return render(request, 'staff/analytics.html')
 
-import csv
-from django.http import HttpResponse
 
 @admin_required
 def download_csv_report(request):
@@ -763,17 +771,6 @@ def download_csv_report(request):
         writer.writerow([status['status__name'], status['count']])
 
     return response
-
-
-
-
-from django.http import HttpResponse
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from reportlab.lib import colors
-from reportlab.platypus import Table, TableStyle
-from datetime import datetime
-from .models import Ticket  # Assuming your Ticket model exists
 
 
 def generate_ticket_summary_report(request):
@@ -837,13 +834,6 @@ def generate_ticket_summary_report(request):
     p.save()
     return response
 
-
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
-from django.http import HttpResponse
-from datetime import datetime
-from .models import Ticket
 
 def generate_ticket_assignment_report(request):
     # Fetch filters from request
@@ -916,14 +906,6 @@ def generate_ticket_assignment_report(request):
     return response
 
 
-from django.http import HttpResponse
-from datetime import datetime
-from django.db.models import Q
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
-from reportlab.pdfgen import canvas
-from .models import Ticket, User
 
 def generate_agent_performance_report(request):
     # Get filter values
@@ -1006,12 +988,6 @@ def generate_agent_performance_report(request):
     return response
 
 
-    
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
-from django.http import HttpResponse
-from datetime import datetime
-from .models import Ticket
 
 def generate_ticket_status_report(request):
     # Get the filter values from the request
