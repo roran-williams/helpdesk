@@ -16,7 +16,7 @@ import os
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Secret key (Keep this secret in production!)
-SECRET_KEY = 'uf#o3lw&+cq^ob(3uld$-t)$w+2wtyt8jt5er-&g2z4(=9rh_p'
+SECRET_KEY = 'secret key'
 
 # Debug mode (Set to False in production)
 DEBUG = True
