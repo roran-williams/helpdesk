@@ -10,7 +10,6 @@ class ProfileUpdateForm(forms.ModelForm):
             'profile_picture', 'organization', 'address', 'contact_number','position', 'department', 'bio', 'social_media_links',
         ]
 
-
 class TicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
